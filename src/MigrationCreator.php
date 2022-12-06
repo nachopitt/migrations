@@ -20,9 +20,9 @@ class MigrationCreator extends \Illuminate\Database\Migrations\MigrationCreator 
     protected function getStub($table, $create)
     {
         if ($create) {
-            $stub = $this->files->exists($customPath = $this->customStubPath.'/migration.stub')
+            $stub = $this->files->exists($customPath = $this->customStubPath.'/migration.create.stub')
                             ? $customPath
-                            : $this->stubPath().'/migration.stub';
+                            : $this->stubPath().'/migration.create.stub';
 
             return $this->files->get($stub);
         }
