@@ -18,7 +18,9 @@ class MigrateImportCommand extends MigrateMakeCommand
      *
      * @var string
      */
-    protected $signature = 'migrate:import {file?} {--s|schema=}';
+    protected $signature = 'migrate:import {file?}
+        {--s|schema= : The name of the schema}
+        {--path= : The location where the migration file should be created}';
 
     /**
      * The console command description.
