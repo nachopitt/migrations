@@ -4,6 +4,7 @@ namespace Nachopitt\MigrationExtendedCommands;
 
 use Nachopitt\MigrationExtendedCommands\Console\Commands\MigrateImportCommand;
 use Illuminate\Database\MigrationServiceProvider;
+use Illuminate\Contracts\Events\Dispatcher;
 
 class MigrationExtendedServiceProvider extends MigrationServiceProvider
 {
