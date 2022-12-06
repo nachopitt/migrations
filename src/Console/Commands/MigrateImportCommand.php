@@ -58,7 +58,11 @@ class MigrateImportCommand extends MigrateMakeCommand
 
         foreach($parser->statements as $statement) {
             if ($statement instanceof CreateStatement && in_array('TABLE', $statement->options->options)) {
+                $this->writeMigration(sprintf('create_%s_table', $statement->name->table), $statement->name->table, true);
+
                 echo $this->handleCreateStatement($statement) . "\n\r";
+
+                $this->composer->dumpAutoloads();
             }
             else if ($statement instanceof AlterStatement) {
 
