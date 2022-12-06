@@ -12,4 +12,16 @@ class MigrationExtendedServiceProvider extends MigrationServiceProvider
         $this->commands['MigrateImport'] = MigrateImportCommand::class;
         parent::__construct($app);
     }
+
+    /**
+     * Register the command.
+     *
+     * @return void
+     */
+    protected function registerMigrateImportCommand()
+    {
+        $this->app->singleton(MigrateImportCommand::class, function ($app) {
+            return new MigrateImportCommand($app['migrator'], $app[Dispatcher::class]);
+        });
+    }
 }
