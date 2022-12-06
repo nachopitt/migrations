@@ -1,12 +1,12 @@
 <?php
 
-namespace Nachopitt\ImprovedMigrationCommands;
+namespace Nachopitt\Migration;
 
 class ConsoleSupportServiceProvider extends \Illuminate\Foundation\Providers\ConsoleSupportServiceProvider
 {
     public function __construct($app)
     {
-        $this->providers[] = ImprovedMigrationServiceProvider::class;
+        $this->providers[] = MigrationServiceProvider::class;
         parent::__construct($app);
     }
 }

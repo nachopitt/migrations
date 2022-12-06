@@ -1,7 +1,7 @@
 {
-    "name": "nachopitt/improved-migration-commands",
+    "name": "nachopitt/migration",
     "type": "project",
-    "homepage": "https://github.com/nachopitt/improved-migration-commands",
+    "homepage": "https://github.com/nachopitt/migration",
     "keywords": ["database","sql","mysql","laravel","migration"],
     "license": "MIT",
     "require": {
@@ -10,13 +10,13 @@
     },
     "autoload": {
         "psr-4": {
-            "Nachopitt\\ImprovedMigrationCommands\\": "src"
+            "Nachopitt\\Migration\\": "src"
         }
     },
     "extra": {
         "laravel": {
             "providers": [
-                "Nachopitt\\ImprovedMigrationCommands\\ConsoleSupportServiceProvider"
+                "Nachopitt\\Migration\\ConsoleSupportServiceProvider"
             ]
         }
     }

@@ -1,11 +1,10 @@
 <?php
 
-namespace Nachopitt\ImprovedMigrationCommands;
+namespace Nachopitt\Migration;
 
-use Nachopitt\ImprovedMigrationCommands\Console\Commands\MigrateImportCommand;
-use Illuminate\Database\MigrationServiceProvider;
+use Nachopitt\Migration\Console\Commands\MigrateImportCommand;
 
-class ImprovedMigrationServiceProvider extends MigrationServiceProvider
+class MigrationServiceProvider extends \Illuminate\Database\MigrationServiceProvider
 {
     public function __construct($app)
     {
