@@ -6,7 +6,7 @@ class MigrationCreator extends \Illuminate\Database\Migrations\MigrationCreator 
 
     protected $definition;
 
-    protected function setDefinition($definition) {
+    public function setDefinition($definition) {
         $this->definition = $definition;
     }
 
