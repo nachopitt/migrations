@@ -2,6 +2,7 @@
 
 namespace Nachopitt\Migration;
 
+use Nachopitt\Migration\MigrationCreator;
 use Nachopitt\Migration\Console\Commands\MigrateImportCommand;
 
 class MigrationServiceProvider extends \Illuminate\Database\MigrationServiceProvider
@@ -12,6 +13,18 @@ class MigrationServiceProvider extends \Illuminate\Database\MigrationServiceProv
             'MigrateImport' => MigrateImportCommand::class
         ];
         parent::__construct($app);
+    }
+
+    /**
+     * Register the migration creator.
+     *
+     * @return void
+     */
+    protected function registerCreator()
+    {
+        $this->app->singleton('migration.creator', function ($app) {
+            return new MigrationCreator($app['files'], $app->basePath('stubs'));
+        });
     }
 
     /**
