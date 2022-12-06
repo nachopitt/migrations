@@ -2,6 +2,7 @@
 
 namespace Nachopitt\MigrationExtendedCommands\Console\Commands;
 
+use Illuminate\Console\Command;
 use Illuminate\Database\Console\Migrations\MigrateCommand;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
