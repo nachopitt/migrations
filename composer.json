@@ -1,4 +1,9 @@
 {
+    "name": "nachopitt/migration-extended-commands",
+    "type": "project",
+    "homepage": "https://github.com/nachopitt/migration-extended-commands",
+    "keywords": ["database","sql","mysql","laravel","migration"],
+    "license": "MIT",
     "require": {
         "laravel/laravel": "^9.3"
     }
