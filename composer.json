@@ -7,5 +7,17 @@
     "require": {
         "laravel/framework": "^9.42",
         "phpmyadmin/sql-parser": "^5.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "Nachopitt\\MigrationExtendedCommands\\": "src"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Nachopitt\\MigrationExtendedCommands\\MigrationExtendedServiceProvider"
+            ]
+        }
     }
 }

@@ -1,8 +1,8 @@
 <?php
 
-namespace Nachopitt\Database;
+namespace Nachopitt\MigrationExtendedCommands;
 
-use App\Console\Commands\MigrateImportCommand;
+use Nachopitt\MigrationExtendedCommands\Console\Commands\MigrateImportCommand;
 use Illuminate\Database\MigrationServiceProvider;
 
 class MigrationExtendedServiceProvider extends MigrationServiceProvider

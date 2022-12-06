@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Console\Commands;
+namespace Nachopitt\MigrationExtendedCommands\Console\Commands;
 
 use Illuminate\Database\Console\Migrations\MigrateCommand;
 use Illuminate\Support\Facades\File;
