@@ -10,6 +10,27 @@ class MigrationCreator extends \Illuminate\Database\Migrations\MigrationCreator 
         $this->definition = $definition;
     }
 
+    /**
+     * Get the migration stub file.
+     *
+     * @param  string|null  $table
+     * @param  bool  $create
+     * @return string
+     */
+    protected function getStub($table, $create)
+    {
+        if ($create) {
+            $stub = $this->files->exists($customPath = $this->customStubPath.'/migration.stub')
+                            ? $customPath
+                            : $this->stubPath().'/migration.stub';
+
+            return $this->files->get($stub);
+        }
+        else {
+            return parent::getStub($table, $create);
+        }
+    }
+
     protected function populateStub($stub, $table)
     {
         $stub = parent::populateStub($stub, $table);
@@ -17,7 +38,7 @@ class MigrationCreator extends \Illuminate\Database\Migrations\MigrationCreator 
         // Here we will replace the table place-holders with the table specified by
         // the developer, which is useful for quickly creating a tables creation
         // or update migration from the console instead of typing it manually.
-        if (! is_null($this->definition)) {
+        if (!is_null($this->definition)) {
             $stub = str_replace(
                 ['DummyDefinition', '{{ definition }}', '{{definition}}'],
                 $this->definition, $stub
@@ -25,5 +46,15 @@ class MigrationCreator extends \Illuminate\Database\Migrations\MigrationCreator 
         }
 
         return $stub;
+    }
+
+    /**
+     * Get the path to the stubs.
+     *
+     * @return string
+     */
+    public function stubPath()
+    {
+        return __DIR__.'/stubs';
     }
 }
