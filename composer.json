@@ -5,6 +5,7 @@
     "keywords": ["database","sql","mysql","laravel","migration"],
     "license": "MIT",
     "require": {
-        "laravel/framework": "^9.42"
+        "laravel/framework": "^9.42",
+        "phpmyadmin/sql-parser": "^5.5"
     }
 }
