@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Providers;
+namespace Nachopitt\Database;
 
 use App\Console\Migration\MigrateCommand;
 use Illuminate\Database\MigrationServiceProvider;
