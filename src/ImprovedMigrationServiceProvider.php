@@ -22,7 +22,14 @@ class ImprovedMigrationServiceProvider extends MigrationServiceProvider
     protected function registerMigrateImportCommand()
     {
         $this->app->singleton(MigrateImportCommand::class, function ($app) {
-            return new MigrateImportCommand($app['migrator'], $app[Dispatcher::class]);
+            // Once we have the migration creator registered, we will create the command
+            // and inject the creator. The creator is responsible for the actual file
+            // creation of the migrations, and may be extended by these developers.
+            $creator = $app['migration.creator'];
+
+            $composer = $app['composer'];
+
+            return new MigrateImportCommand($creator, $composer);
         });
     }
 }

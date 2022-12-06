@@ -3,7 +3,7 @@
 namespace Nachopitt\ImprovedMigrationCommands\Console\Commands;
 
 use Illuminate\Console\Command;
-use Illuminate\Database\Console\Migrations\MigrateCommand;
+use Illuminate\Database\Console\Migrations\MigrateMakeCommand;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use PhpMyAdmin\SqlParser\Parser;
@@ -11,7 +11,7 @@ use PhpMyAdmin\SqlParser\Statements\CreateStatement;
 use PhpMyAdmin\SqlParser\Statements\AlterStatement;
 use PhpMyAdmin\SqlParser\Statements\DropStatement;
 
-class MigrateImportCommand extends MigrateCommand
+class MigrateImportCommand extends MigrateMakeCommand
 {
     /**
      * The name and signature of the console command.
