@@ -1,6 +1,6 @@
 <?php
 
-namespace Nachopitt\MigrationExtendedCommands\Console\Commands;
+namespace Nachopitt\ImprovedMigrationCommands\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Database\Console\Migrations\MigrateCommand;
