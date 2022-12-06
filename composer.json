@@ -16,7 +16,7 @@
     "extra": {
         "laravel": {
             "providers": [
-                "Nachopitt\\ImprovedMigrationCommands\\ImprovedMigrationServiceProvider"
+                "Nachopitt\\ImprovedMigrationCommands\\ConsoleSupportServiceProvider"
             ]
         }
     }

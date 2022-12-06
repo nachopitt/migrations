@@ -9,7 +9,9 @@ class ImprovedMigrationServiceProvider extends MigrationServiceProvider
 {
     public function __construct($app)
     {
-        $this->commands['MigrateImport'] = MigrateImportCommand::class;
+        $this->commands = [
+            'MigrateImport' => MigrateImportCommand::class
+        ];
         parent::__construct($app);
     }
 
