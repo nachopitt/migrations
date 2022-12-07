@@ -22,7 +22,7 @@ class MigrationCreator extends \Illuminate\Database\Migrations\MigrationCreator 
         if ($create) {
             $stub = $this->files->exists($customPath = $this->customStubPath.'/migration.create.stub')
                             ? $customPath
-                            : $this->stubPath().'/migration.create.stub';
+                            : __DIR__.'/stubs/migration.create.stub';
 
             return $this->files->get($stub);
         }
@@ -46,15 +46,5 @@ class MigrationCreator extends \Illuminate\Database\Migrations\MigrationCreator 
         }
 
         return $stub;
-    }
-
-    /**
-     * Get the path to the stubs.
-     *
-     * @return string
-     */
-    public function stubPath()
-    {
-        return __DIR__.'/stubs';
     }
 }
