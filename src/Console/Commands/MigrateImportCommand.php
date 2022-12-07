@@ -6,6 +6,7 @@ use Illuminate\Console\Command;
 use Illuminate\Database\Console\Migrations\MigrateMakeCommand;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
+use Nachopitt\Migration\MigrationDefinition;
 use PhpMyAdmin\SqlParser\Parser;
 use PhpMyAdmin\SqlParser\Statements\CreateStatement;
 use PhpMyAdmin\SqlParser\Statements\AlterStatement;
@@ -85,6 +86,8 @@ class MigrateImportCommand extends MigrateMakeCommand
     }
 
     public function handleCreateStatement(CreateStatement $statement) {
+        $definition = new MigrationDefinition;
+
         $allowedDataTypes = [
             'INT',
             'INTEGER',
@@ -313,7 +316,6 @@ class MigrateImportCommand extends MigrateMakeCommand
         //     }
         // });
 
-        $migration = '';
         // $migration .= sprintf("Schema::create('%s', function (Blueprint \$table) {", $statement->name->table);
 
         // if (!empty($primaryKey)) {
@@ -326,17 +328,17 @@ class MigrateImportCommand extends MigrateMakeCommand
         foreach($statement->fields as $field) {
             if (!empty($field->name) && !empty($field->type)) {
                 if (!empty($columnBlueprints[$field->type->name])) {
-                    $migration .= "\r\t" .$columnBlueprints[$field->type->name]($field);
+                    $definition->append($columnBlueprints[$field->type->name]($field));
+                    $definition->increaseIdentationBy1();
 
                     $options = array_merge($field->type->options->options, $field->options->options);
                     foreach ($options as $option) {
                         // var_dump($option);
                         $optionName = is_array($option) ? $option['name'] : $option;
                         if (!empty($columnModifierBlueprints['whitelist'][$optionName])) {
-                            $migration .= "\r\t\t" . $columnModifierBlueprints['whitelist'][$optionName]($field, $option);
+                            $definition->append($columnModifierBlueprints['whitelist'][$optionName]($field, $option));
                         }
                     }
-                    
 
                     foreach ($columnModifierBlueprints['blacklist'] as $blacklistOptionName => $blacklistOption) {
                         $found = false;
@@ -349,11 +351,12 @@ class MigrateImportCommand extends MigrateMakeCommand
                         }
 
                         if (!$found) {
-                            $migration .= "\r\t\t" . $blacklistOption($field, $option);
+                            $definition->append($blacklistOption($field, $option));
                         }
                     }
     
-                    $migration .= ";";
+                    $definition->append(';', false, false);
+                    $definition->decreaseIdentationBy1();
                 }
             }
             if (!empty($field->key)) {
@@ -362,49 +365,50 @@ class MigrateImportCommand extends MigrateMakeCommand
 
                 if ($field->key->type  === 'KEY') {
                     if (count($field->key->columns) == 1) {
-                        $migration .= sprintf("\r\t\$table->index('%s', '%s')", $field->key->columns[0]['name'], $field->key->name);
+                        $definition->append(sprintf("\$table->index('%s', '%s')", $field->key->columns[0]['name'], $field->key->name));
                     }
                     else {
                         $references = array_column($field->key->columns, 'name');
-                        $migration .= sprintf("\r\t\$table->index(['" . implode("', '", $references) . "'], '%s')", $field->key->name);
+                        $definition->append(sprintf("\$table->index(['" . implode("', '", $references) . "'], '%s')", $field->key->name));
                     }
 
-                    $migration .= ";";
+                    $definition->append(';', false, false);
                 }
 
                 if ($field->key->type  === 'FOREIGN KEY') {
                     if (count($field->key->columns) == 1) {
-                        $migration .= sprintf("\r\t\$table->foreign('%s', '%s')", $field->key->columns[0]['name'], $field->name);
+                        $definition->append(sprintf("\$table->foreign('%s', '%s')", $field->key->columns[0]['name'], $field->name));
                     }
                     else {
                         $references = array_column($field->key->columns, 'name');
-                        $migration .= sprintf("\r\t\$table->foreign(['" . implode("', '", $references) . "'], '%s')", $field->key->name);
+                        $definition->append(sprintf("\$table->foreign(['" . implode("', '", $references) . "'], '%s')", $field->key->name));
                     }
 
                     if (!empty($field->references)) {
+                        $definition->increaseIdentationBy1();
                         if (!empty($field->references->columns)) {
                             if (count($field->references->columns) == 1) {
-                                $migration .= sprintf("\r\t\t->references('%s')", $field->references->columns[0]);
+                                $definition->append(sprintf("->references('%s')", $field->references->columns[0]));
                             }
                             else {
-                                $migration .= "\r\t\t->references(['" . implode("', '", $field->references->columns) . "'])";
+                                $definition->append("->references(['" . implode("', '", $field->references->columns) . "'])");
                             }
                         }
 
                         if (!empty($field->references->columns)) {
-                            $migration .= sprintf("\r\t\t->on('%s')", $field->references->table->table);
+                            $definition->append(sprintf("->on('%s')", $field->references->table->table));
                         }
 
                         if (!empty($field->references->options)) {
                             if (!empty($field->references->options->options)) {
                                 foreach($field->references->options->options as $referencesOption) {
-                                    $migration .= $referencesOptionBlueprints[$referencesOption['name']]($referencesOption['value']);
+                                    $definition->append($referencesOptionBlueprints[$referencesOption['name']]($referencesOption['value']), false, false);
                                 }
                             }
                         }
                     }
 
-                    $migration .= ";";
+                    $definition->append(';', false, false);
                 }
             }
         }
@@ -434,6 +438,6 @@ class MigrateImportCommand extends MigrateMakeCommand
 
         // $migration .= "\n\r});";
         
-        return $migration;
+        return $definition->get();
     }
 }
