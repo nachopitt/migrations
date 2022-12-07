@@ -1,12 +1,12 @@
 <?php
 
-namespace Nachopitt\Migration\Console\Commands;
+namespace Nachopitt\Migrations\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Database\Console\Migrations\MigrateMakeCommand;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
-use Nachopitt\Migration\MigrationDefinition;
+use Nachopitt\Migrations\MigrationDefinition;
 use PhpMyAdmin\SqlParser\Parser;
 use PhpMyAdmin\SqlParser\Statements\CreateStatement;
 use PhpMyAdmin\SqlParser\Statements\AlterStatement;

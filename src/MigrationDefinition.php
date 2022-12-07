@@ -1,6 +1,6 @@
 <?php
 
-namespace Nachopitt\Migration;
+namespace Nachopitt\Migrations;
 
 class MigrationDefinition {
 
