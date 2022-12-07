@@ -16,13 +16,31 @@ class MigrationServiceProvider extends \Illuminate\Database\MigrationServiceProv
     }
 
     /**
+     * Register the migration repository service.
+     *
+     * @return void
+     */
+    protected function registerRepository()
+    {
+    }
+
+    /**
+     * Register the migrator service.
+     *
+     * @return void
+     */
+    protected function registerMigrator()
+    {
+    }
+
+    /**
      * Register the migration creator.
      *
      * @return void
      */
     protected function registerCreator()
     {
-        $this->app->singleton('migration.creator', function ($app) {
+        $this->app->singleton('migration.definition_creator', function ($app) {
             return new MigrationCreator($app['files'], $app->basePath('stubs'));
         });
     }
@@ -38,11 +56,21 @@ class MigrationServiceProvider extends \Illuminate\Database\MigrationServiceProv
             // Once we have the migration creator registered, we will create the command
             // and inject the creator. The creator is responsible for the actual file
             // creation of the migrations, and may be extended by these developers.
-            $creator = $app['migration.creator'];
+            $creator = $app['migration.definition_creator'];
 
             $composer = $app['composer'];
 
             return new MigrateImportCommand($creator, $composer);
         });
+    }
+
+    /**
+     * Get the services provided by the provider.
+     *
+     * @return array
+     */
+    public function provides()
+    {
+        return array_merge(['migration.definition_creator'], array_values($this->commands));
     }
 }
