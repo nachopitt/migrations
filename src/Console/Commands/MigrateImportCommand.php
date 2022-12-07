@@ -406,6 +406,8 @@ class MigrateImportCommand extends MigrateMakeCommand
                                 }
                             }
                         }
+
+                        $definition->decreaseIdentationBy1();
                     }
 
                     $definition->append(';', false, false);

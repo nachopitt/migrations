@@ -25,13 +25,15 @@ class MigrationDefinition {
     }
 
     public function append($definition, $newLine = true, $indent = true) {
-        if (!empty($this->definition) && $newLine) {
-            $this->definition .= '\r';
-        }
+        if (!empty($this->definition)) {
+            if ($newLine) {
+                $this->definition .= "\r";
+            }
 
-        if ($indent) {
-            for ($i = 0; $i < $this->indentation; $i++) {
-                $this->definition .= '\t';
+            if ($indent) {
+                for ($i = 0; $i < $this->indentation; $i++) {
+                    $this->definition .= "\t";
+                }
             }
         }
 
