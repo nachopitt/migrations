@@ -38,7 +38,7 @@ class MigrateImportCommand extends MigrateMakeCommand
      */
     public function handle()
     {
-        $separator = "\r\n";
+        // $separator = "\r\n";
         $defaultDatabase = config("database.connections.mysql.database");
         $schemaName = $this->option('schema') ?: $defaultDatabase;
         $sqlImportFile = $this->argument('file') ?: "database_model/${defaultDatabase}_diff.sql";
@@ -65,7 +65,7 @@ class MigrateImportCommand extends MigrateMakeCommand
                 $this->creator->setDefinition($this->handleCreateStatement($statement));
                 $this->writeMigration(sprintf('create_%s_table', $statement->name->table), $statement->name->table, true);
 
-                echo $this->handleCreateStatement($statement) . "\n\r";
+                echo $this->handleCreateStatement($statement) . "\r";
 
                 $this->composer->dumpAutoloads();
             }
@@ -314,7 +314,7 @@ class MigrateImportCommand extends MigrateMakeCommand
         // });
 
         $migration = '';
-        $migration .= sprintf("Schema::create('%s', function (Blueprint \$table) {", $statement->name->table);
+        // $migration .= sprintf("Schema::create('%s', function (Blueprint \$table) {", $statement->name->table);
 
         // if (!empty($primaryKey)) {
         //     $primaryKeyName = $fields[$primaryKey->key->columns[0]['name']];
@@ -326,14 +326,14 @@ class MigrateImportCommand extends MigrateMakeCommand
         foreach($statement->fields as $field) {
             if (!empty($field->name) && !empty($field->type)) {
                 if (!empty($columnBlueprints[$field->type->name])) {
-                    $migration .= "\n\r\t" .$columnBlueprints[$field->type->name]($field);
+                    $migration .= "\r\t" .$columnBlueprints[$field->type->name]($field);
 
                     $options = array_merge($field->type->options->options, $field->options->options);
                     foreach ($options as $option) {
                         // var_dump($option);
                         $optionName = is_array($option) ? $option['name'] : $option;
                         if (!empty($columnModifierBlueprints['whitelist'][$optionName])) {
-                            $migration .= "\n\r\t\t" . $columnModifierBlueprints['whitelist'][$optionName]($field, $option);
+                            $migration .= "\r\t\t" . $columnModifierBlueprints['whitelist'][$optionName]($field, $option);
                         }
                     }
                     
@@ -349,7 +349,7 @@ class MigrateImportCommand extends MigrateMakeCommand
                         }
 
                         if (!$found) {
-                            $migration .= "\n\r\t\t" . $blacklistOption($field, $option);
+                            $migration .= "\r\t\t" . $blacklistOption($field, $option);
                         }
                     }
     
@@ -362,11 +362,11 @@ class MigrateImportCommand extends MigrateMakeCommand
 
                 if ($field->key->type  === 'KEY') {
                     if (count($field->key->columns) == 1) {
-                        $migration .= sprintf("\n\r\t\$table->index('%s', '%s')", $field->key->columns[0]['name'], $field->key->name);
+                        $migration .= sprintf("\r\t\$table->index('%s', '%s')", $field->key->columns[0]['name'], $field->key->name);
                     }
                     else {
                         $references = array_column($field->key->columns, 'name');
-                        $migration .= sprintf("\n\r\t\$table->index(['" . implode("', '", $references) . "'], '%s')", $field->key->name);
+                        $migration .= sprintf("\r\t\$table->index(['" . implode("', '", $references) . "'], '%s')", $field->key->name);
                     }
 
                     $migration .= ";";
@@ -374,25 +374,25 @@ class MigrateImportCommand extends MigrateMakeCommand
 
                 if ($field->key->type  === 'FOREIGN KEY') {
                     if (count($field->key->columns) == 1) {
-                        $migration .= sprintf("\n\r\t\$table->foreign('%s', '%s')", $field->key->columns[0]['name'], $field->name);
+                        $migration .= sprintf("\r\t\$table->foreign('%s', '%s')", $field->key->columns[0]['name'], $field->name);
                     }
                     else {
                         $references = array_column($field->key->columns, 'name');
-                        $migration .= sprintf("\n\r\t\$table->foreign(['" . implode("', '", $references) . "'], '%s')", $field->key->name);
+                        $migration .= sprintf("\r\t\$table->foreign(['" . implode("', '", $references) . "'], '%s')", $field->key->name);
                     }
 
                     if (!empty($field->references)) {
                         if (!empty($field->references->columns)) {
                             if (count($field->references->columns) == 1) {
-                                $migration .= sprintf("\n\r\t\t->references('%s')", $field->references->columns[0]);
+                                $migration .= sprintf("\r\t\t->references('%s')", $field->references->columns[0]);
                             }
                             else {
-                                $migration .= "\n\r\t\t->references(['" . implode("', '", $field->references->columns) . "'])";
+                                $migration .= "\r\t\t->references(['" . implode("', '", $field->references->columns) . "'])";
                             }
                         }
 
                         if (!empty($field->references->columns)) {
-                            $migration .= sprintf("\n\r\t\t->on('%s')", $field->references->table->table);
+                            $migration .= sprintf("\r\t\t->on('%s')", $field->references->table->table);
                         }
 
                         if (!empty($field->references->options)) {
@@ -424,7 +424,7 @@ class MigrateImportCommand extends MigrateMakeCommand
         //     }
         // }
 
-        $migration .= "\n\r});";
+        // $migration .= "\n\r});";
 
         // $migration .= sprintf("\n\rSchema::table('%s', function (Blueprint \$table) {", $statement->name->table);
 
