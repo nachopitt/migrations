@@ -39,34 +39,18 @@ class MigrateImportCommand extends MigrateMakeCommand
      */
     public function handle()
     {
-        // $separator = "\r\n";
         $defaultDatabase = config("database.connections.mysql.database");
         $schemaName = $this->option('schema') ?: $defaultDatabase;
         $sqlImportFile = $this->argument('file') ?: "database_model/${defaultDatabase}_diff.sql";
 
         $sqlImportFileContents = File::get($sqlImportFile);
 
-        // $line = strtok($sqlImportFileContents, $separator);
-
-        // while ($line !== false) {
-        //     if (!str_starts_with($line, "#") && !str_starts_with($line, "--")) {
-        //         $sqlParser = new SqlParser($line);
-        //         $sqlParser->parse();
-        //     }
-        //     $line = strtok($separator);
-        // }
-
         $parser = new Parser($sqlImportFileContents);
-        //var_dump($parser->statements);
-
-        //new MigrationCreator(new Filesystem, )
 
         foreach($parser->statements as $statement) {
             if ($statement instanceof CreateStatement && in_array('TABLE', $statement->options->options)) {
                 $this->creator->setDefinition($this->handleCreateStatement($statement));
                 $this->writeMigration(sprintf('create_%s_table', $statement->name->table), $statement->name->table, true);
-
-                echo $this->handleCreateStatement($statement) . "\r";
 
                 $this->composer->dumpAutoloads();
             }
@@ -296,35 +280,6 @@ class MigrateImportCommand extends MigrateMakeCommand
             }
         }
 
-        // $fields = [];
-        // $primaryKey = null;
-        // $keys = [];
-        // $foreignKeys = [];
-        // array_walk($statement->fields, function($field) use (&$fields, &$primaryKey, &$keys, &$foreignKeys) {
-        //     if (!empty($field->name) && !empty($field->type))
-        //         $fields[$field->name] = $field;
-
-        //     if (!empty($field->key)) {
-        //         if ($field->key->type === 'PRIMARY KEY')
-        //             $primaryKey = $field;
-
-        //         if ($field->key->type  === 'KEY')
-        //             $keys[$field->key->columns[0]['name']] = $field;
-
-        //         if ($field->key->type  === 'FOREIGN KEY')
-        //             $foreignKeys[$field->key->columns[0]['name']] = $field;
-        //     }
-        // });
-
-        // $migration .= sprintf("Schema::create('%s', function (Blueprint \$table) {", $statement->name->table);
-
-        // if (!empty($primaryKey)) {
-        //     $primaryKeyName = $fields[$primaryKey->key->columns[0]['name']];
-        //     if ($primaryKeyName->type->name === 'BIGINT' && in_array('UNSIGNED', $primaryKeyName->type->options->options)) {
-        //         $migration .= "\t\$table->id();\n\r";
-        //     }
-        // }
-
         foreach($statement->fields as $field) {
             if (!empty($field->name) && !empty($field->type)) {
                 if (!empty($columnBlueprints[$field->type->name])) {
@@ -333,7 +288,6 @@ class MigrateImportCommand extends MigrateMakeCommand
 
                     $options = array_merge($field->type->options->options, $field->options->options);
                     foreach ($options as $option) {
-                        // var_dump($option);
                         $optionName = is_array($option) ? $option['name'] : $option;
                         if (!empty($columnModifierBlueprints['whitelist'][$optionName])) {
                             $definition->append($columnModifierBlueprints['whitelist'][$optionName]($field, $option));
@@ -343,7 +297,6 @@ class MigrateImportCommand extends MigrateMakeCommand
                     foreach ($columnModifierBlueprints['blacklist'] as $blacklistOptionName => $blacklistOption) {
                         $found = false;
                         foreach ($options as $option) {
-                            // var_dump($option);
                             $optionName = is_array($option) ? $option['name'] : $option;
                             if ($optionName === $blacklistOptionName) {
                                 $found = true;
@@ -386,6 +339,7 @@ class MigrateImportCommand extends MigrateMakeCommand
 
                     if (!empty($field->references)) {
                         $definition->increaseIdentation();
+
                         if (!empty($field->references->columns)) {
                             if (count($field->references->columns) == 1) {
                                 $definition->append(sprintf("->references('%s')", $field->references->columns[0]));
@@ -414,31 +368,6 @@ class MigrateImportCommand extends MigrateMakeCommand
                 }
             }
         }
-
-        // if (!empty($primaryKey)) {
-        //     if (count($primaryKey->key->columns) == 1) {
-        //         $migration .= sprintf("\n\r\t\$table->primary('%s');", $primaryKey->key->columns[0]['name']);
-        //     }
-        // }
-
-        // if (!empty($fields['created_at']) && !empty($fields['updated_at'])) {
-        //     if ($fields['created_at']->type->name === 'TIMESTAMP' && 
-        //         in_array('NOT_NULL', $fields['created_at']->options->options) &&
-        //         $fields['updated_at']->type->name === 'TIMESTAMP' && 
-        //         in_array('NOT_NULL', $fields['updated_at']->options->options)) {
-        //             $migration .= "\t\$table->timestamps();\n\r";
-        //     }
-        // }
-
-        // $migration .= "\n\r});";
-
-        // $migration .= sprintf("\n\rSchema::table('%s', function (Blueprint \$table) {", $statement->name->table);
-
-        // foreach($statement->fields as $key) {
-
-        // }
-
-        // $migration .= "\n\r});";
         
         return $definition->get();
     }
