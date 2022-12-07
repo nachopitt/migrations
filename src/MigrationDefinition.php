@@ -16,12 +16,12 @@ class MigrationDefinition {
         $this->indentation = $indentation;
     }
 
-    public function increaseIdentationBy1() {
-        $this->indentation++;
+    public function increaseIdentation($indentation = 1) {
+        $this->indentation += $indentation;
     }
 
-    public function decreaseIdentationBy1() {
-        $this->indentation--;
+    public function decreaseIdentation($indentation = 1) {
+        $this->indentation -= $indentation;
     }
 
     public function append($definition, $newLine = true, $indent = true) {

@@ -329,7 +329,7 @@ class MigrateImportCommand extends MigrateMakeCommand
             if (!empty($field->name) && !empty($field->type)) {
                 if (!empty($columnBlueprints[$field->type->name])) {
                     $definition->append($columnBlueprints[$field->type->name]($field));
-                    $definition->increaseIdentationBy1();
+                    $definition->increaseIdentation();
 
                     $options = array_merge($field->type->options->options, $field->options->options);
                     foreach ($options as $option) {
@@ -356,7 +356,7 @@ class MigrateImportCommand extends MigrateMakeCommand
                     }
     
                     $definition->append(';', false, false);
-                    $definition->decreaseIdentationBy1();
+                    $definition->decreaseIdentation();
                 }
             }
             if (!empty($field->key)) {
@@ -385,7 +385,7 @@ class MigrateImportCommand extends MigrateMakeCommand
                     }
 
                     if (!empty($field->references)) {
-                        $definition->increaseIdentationBy1();
+                        $definition->increaseIdentation();
                         if (!empty($field->references->columns)) {
                             if (count($field->references->columns) == 1) {
                                 $definition->append(sprintf("->references('%s')", $field->references->columns[0]));
@@ -407,7 +407,7 @@ class MigrateImportCommand extends MigrateMakeCommand
                             }
                         }
 
-                        $definition->decreaseIdentationBy1();
+                        $definition->decreaseIdentation();
                     }
 
                     $definition->append(';', false, false);
