@@ -6,7 +6,7 @@ class ConsoleSupportServiceProvider extends \Illuminate\Foundation\Providers\Con
 {
     public function __construct($app)
     {
-        $this->providers[] = MigrationServiceProvider::class;
+        $this->providers = [MigrationServiceProvider::class];
         parent::__construct($app);
     }
 }
