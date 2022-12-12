@@ -62,8 +62,6 @@ class MigrateImportCommand extends MigrateMakeCommand
                 $this->creator->setDefinition($migrationDefinition->get());
 
                 $this->writeMigration(sprintf('create_%s_table', $statement->name->table), $statement->name->table, true);
-
-                $this->composer->dumpAutoloads();
             }
             else if ($statement instanceof AlterStatement) {
 
@@ -72,6 +70,8 @@ class MigrateImportCommand extends MigrateMakeCommand
                 
             }
         }
+
+        $this->composer->dumpAutoloads();
 
         config(["database.connections.mysql.database" => $schemaName]);
 
