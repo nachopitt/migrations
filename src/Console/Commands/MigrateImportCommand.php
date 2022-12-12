@@ -49,7 +49,7 @@ class MigrateImportCommand extends MigrateMakeCommand
     {
         $defaultDatabase = config("database.connections.mysql.database");
         $schemaName = $this->option('schema') ?: $defaultDatabase;
-        $sqlImportFile = $this->argument('file') ?: "database_model/${defaultDatabase}_diff.sql";
+        $sqlImportFile = $this->argument('file') ?: "database_model/${defaultDatabase}.sql";
 
         $sqlImportFileContents = File::get($sqlImportFile);
 
