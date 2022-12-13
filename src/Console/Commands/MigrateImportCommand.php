@@ -5,9 +5,7 @@ namespace Nachopitt\Migrations\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Database\Console\Migrations\MigrateMakeCommand;
 use Illuminate\Support\Facades\File;
-use Nachopitt\Migrations\MigrationCreator;
-use Nachopitt\Migrations\MigrationDefinition;
-use Nachopitt\Migrations\Writers\MigrationWriter;
+use Nachopitt\Migrations\Writers\MigrationDefinitionWriter;
 use PhpMyAdmin\SqlParser\Parser;
 use PhpMyAdmin\SqlParser\Statements\CreateStatement;
 use PhpMyAdmin\SqlParser\Statements\AlterStatement;
@@ -54,7 +52,7 @@ class MigrateImportCommand extends MigrateMakeCommand
         $sqlImportFileContents = File::get($sqlImportFile);
 
         $parser = new Parser($sqlImportFileContents);
-        $migrationWriter = new MigrationWriter;
+        $migrationWriter = new MigrationDefinitionWriter;
 
         foreach($parser->statements as $statement) {
             if ($statement instanceof CreateStatement && in_array('TABLE', $statement->options->options)) {

@@ -6,7 +6,7 @@ use Illuminate\Support\Str;
 use Nachopitt\Migrations\MigrationDefinition;
 use PhpMyAdmin\SqlParser\Statements\CreateStatement;
 
-class MigrationWriter {
+class MigrationDefinitionWriter {
 
     protected $allowedDataTypes;
     protected $columnBlueprints;
