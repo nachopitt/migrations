@@ -4,10 +4,10 @@ namespace Nachopitt\Migrations;
 
 class MigrationCreator extends \Illuminate\Database\Migrations\MigrationCreator {
 
-    protected $definition;
+    protected $upDefinition;
 
-    public function setDefinition($definition) {
-        $this->definition = $definition;
+    public function setUpDefinition($upDefinition) {
+        $this->upDefinition = $upDefinition;
     }
 
     /**
@@ -38,10 +38,10 @@ class MigrationCreator extends \Illuminate\Database\Migrations\MigrationCreator 
         // Here we will replace the table place-holders with the table specified by
         // the developer, which is useful for quickly creating a tables creation
         // or update migration from the console instead of typing it manually.
-        if (!is_null($this->definition)) {
+        if (!is_null($this->upDefinition)) {
             $stub = str_replace(
-                ['DummyDefinition', '{{ definition }}', '{{definition}}'],
-                $this->definition, $stub
+                ['DummyUpDefinition', '{{ upDefinition }}', '{{upDefinition}}'],
+                $this->upDefinition, $stub
             );
         }
 

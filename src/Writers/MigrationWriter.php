@@ -227,19 +227,22 @@ class MigrationWriter {
     }
 
     public function handleCreateTableStatement(CreateStatement $statement) {
-        $definition = new MigrationDefinition;
+        $upDefinition = new MigrationDefinition;
+
+        $tableName = $statement->name->table;
+        $upDefinition->append("Schema::create('$tableName', function (Blueprint \$table) {");
 
         foreach($statement->fields as $field) {
             if (!empty($field->name) && !empty($field->type)) {
                 if (!empty($this->columnBlueprints[$field->type->name])) {
-                    $definition->append($this->columnBlueprints[$field->type->name]($field));
-                    $definition->increaseIdentation();
+                    $upDefinition->append($this->columnBlueprints[$field->type->name]($field));
+                    $upDefinition->increaseIdentation();
 
                     $options = array_merge($field->type->options->options, $field->options->options);
                     foreach ($options as $option) {
                         $optionName = is_array($option) ? $option['name'] : $option;
                         if (!empty($this->columnModifierBlueprints['whitelist'][$optionName])) {
-                            $definition->append($this->columnModifierBlueprints['whitelist'][$optionName]($field, $option));
+                            $upDefinition->append($this->columnModifierBlueprints['whitelist'][$optionName]($field, $option));
                         }
                     }
 
@@ -253,12 +256,12 @@ class MigrationWriter {
                         }
 
                         if (!$found) {
-                            $definition->append($blacklistOption($field, $option));
+                            $upDefinition->append($blacklistOption($field, $option));
                         }
                     }
 
-                    $definition->append(';', false, false);
-                    $definition->decreaseIdentation();
+                    $upDefinition->append(';', false, false);
+                    $upDefinition->decreaseIdentation();
                 }
             }
             if (!empty($field->key)) {
@@ -267,57 +270,60 @@ class MigrationWriter {
 
                 if ($field->key->type  === 'KEY') {
                     if (count($field->key->columns) == 1) {
-                        $definition->append(sprintf("\$table->index('%s', '%s')", $field->key->columns[0]['name'], $field->key->name));
+                        $upDefinition->append(sprintf("\$table->index('%s', '%s')", $field->key->columns[0]['name'], $field->key->name));
                     }
                     else {
                         $references = array_column($field->key->columns, 'name');
-                        $definition->append(sprintf("\$table->index(['" . implode("', '", $references) . "'], '%s')", $field->key->name));
+                        $upDefinition->append(sprintf("\$table->index(['" . implode("', '", $references) . "'], '%s')", $field->key->name));
                     }
 
-                    $definition->append(';', false, false);
+                    $upDefinition->append(';', false, false);
                 }
 
                 if ($field->key->type  === 'FOREIGN KEY') {
                     if (count($field->key->columns) == 1) {
-                        $definition->append(sprintf("\$table->foreign('%s', '%s')", $field->key->columns[0]['name'], $field->name));
+                        $upDefinition->append(sprintf("\$table->foreign('%s', '%s')", $field->key->columns[0]['name'], $field->name));
                     }
                     else {
                         $references = array_column($field->key->columns, 'name');
-                        $definition->append(sprintf("\$table->foreign(['" . implode("', '", $references) . "'], '%s')", $field->key->name));
+                        $upDefinition->append(sprintf("\$table->foreign(['" . implode("', '", $references) . "'], '%s')", $field->key->name));
                     }
 
                     if (!empty($field->references)) {
-                        $definition->increaseIdentation();
+                        $upDefinition->increaseIdentation();
 
                         if (!empty($field->references->columns)) {
                             if (count($field->references->columns) == 1) {
-                                $definition->append(sprintf("->references('%s')", $field->references->columns[0]));
+                                $upDefinition->append(sprintf("->references('%s')", $field->references->columns[0]));
                             }
                             else {
-                                $definition->append("->references(['" . implode("', '", $field->references->columns) . "'])");
+                                $upDefinition->append("->references(['" . implode("', '", $field->references->columns) . "'])");
                             }
                         }
 
                         if (!empty($field->references->columns)) {
-                            $definition->append(sprintf("->on('%s')", $field->references->table->table));
+                            $upDefinition->append(sprintf("->on('%s')", $field->references->table->table));
                         }
 
                         if (!empty($field->references->options)) {
                             if (!empty($field->references->options->options)) {
                                 foreach($field->references->options->options as $referencesOption) {
-                                    $definition->append($this->referencesOptionBlueprints[$referencesOption['name']]($referencesOption['value']), false, false);
+                                    $upDefinition->append($this->referencesOptionBlueprints[$referencesOption['name']]($referencesOption['value']), false, false);
                                 }
                             }
                         }
 
-                        $definition->decreaseIdentation();
+                        $upDefinition->decreaseIdentation();
                     }
 
-                    $definition->append(';', false, false);
+                    $upDefinition->append(';', false, false);
                 }
             }
         }
 
-        return $definition;
+        $upDefinition->decreaseIdentation();
+        $upDefinition->append('});');
+
+        return $upDefinition;
     }
 }
