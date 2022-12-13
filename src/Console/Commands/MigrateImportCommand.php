@@ -65,6 +65,8 @@ class MigrateImportCommand extends MigrateMakeCommand
                 $this->creator->setDownDefinition($downDefinition->get());
 
                 $this->writeMigration(sprintf('create_%s_table', $statement->name->table), $statement->name->table, true);
+
+                $migrationWriter->reset();
             }
             else if ($statement instanceof AlterStatement) {
 
