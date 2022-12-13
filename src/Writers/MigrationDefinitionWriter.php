@@ -340,6 +340,7 @@ class MigrationDefinitionWriter {
             }
         }
 
+        $this->upDefinition->decreaseIdentation();
         $this->upDefinition->append('});');
     }
 
