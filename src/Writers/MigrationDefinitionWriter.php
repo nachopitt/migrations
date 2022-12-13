@@ -4,6 +4,7 @@ namespace Nachopitt\Migrations\Writers;
 
 use Illuminate\Support\Str;
 use Nachopitt\Migrations\MigrationDefinition;
+use PhpMyAdmin\SqlParser\Statements\AlterStatement;
 use PhpMyAdmin\SqlParser\Statements\CreateStatement;
 
 class MigrationDefinitionWriter {
@@ -326,6 +327,19 @@ class MigrationDefinitionWriter {
         }
 
         $this->upDefinition->decreaseIdentation();
+        $this->upDefinition->append('});');
+    }
+
+    public function handleAlterTableStatement(AlterStatement $statement) {
+        $tableName = $statement->table->table;
+        $this->upDefinition->append("Schema::table('$tableName', function (Blueprint \$table) {");
+
+        foreach($statement->altered as $alterOperation) {
+            if (!array_diff($alterOperation->options->options, ['ADD', 'COLUMN'])) {
+                $this->upDefinition->append(sprintf("\$table->%s('%s');", 'integer', $alterOperation->field->column));
+            }
+        }
+
         $this->upDefinition->append('});');
     }
 

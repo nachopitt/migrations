@@ -69,7 +69,17 @@ class MigrateImportCommand extends MigrateMakeCommand
                 $migrationWriter->reset();
             }
             else if ($statement instanceof AlterStatement) {
+                $migrationWriter->handleAlterTableStatement($statement);
 
+                $upDefinition = $migrationWriter->getUpDefinition();
+                $this->creator->setUpDefinition($upDefinition->get());
+
+                $downDefinition = $migrationWriter->getDownDefinition();
+                $this->creator->setDownDefinition($downDefinition->get());
+
+                $this->writeMigration(sprintf('update_%s_table', $statement->table->table), $statement->table->table, true);
+
+                $migrationWriter->reset();
             }
             else if ($statement instanceof DropStatement) {
                 
