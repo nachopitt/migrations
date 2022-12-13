@@ -5,9 +5,14 @@ namespace Nachopitt\Migrations;
 class MigrationCreator extends \Illuminate\Database\Migrations\MigrationCreator {
 
     protected $upDefinition;
+    protected $downDefinition;
 
     public function setUpDefinition($upDefinition) {
         $this->upDefinition = $upDefinition;
+    }
+
+    public function setDownDefinition($downDefinition) {
+        $this->downDefinition = $downDefinition;
     }
 
     /**
@@ -42,6 +47,13 @@ class MigrationCreator extends \Illuminate\Database\Migrations\MigrationCreator 
             $stub = str_replace(
                 ['DummyUpDefinition', '{{ upDefinition }}', '{{upDefinition}}'],
                 $this->upDefinition, $stub
+            );
+        }
+
+        if (!is_null($this->downDefinition)) {
+            $stub = str_replace(
+                ['DummyDownDefinition', '{{ downDefinition }}', '{{downDefinition}}'],
+                $this->downDefinition, $stub
             );
         }
 

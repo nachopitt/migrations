@@ -13,9 +13,14 @@ class MigrationDefinitionWriter {
     protected $columnModifierBlueprints;
     protected $actionBlueprints;
     protected $referencesOptionBlueprints;
+    protected MigrationDefinition $upDefinition;
+    protected MigrationDefinition $downDefinition;
 
     public function __construct()
     {
+        $this->upDefinition = new MigrationDefinition;
+        $this->downDefinition = new MigrationDefinition;
+
         $this->allowedDataTypes = [
             'INT',
             'INTEGER',
@@ -227,22 +232,21 @@ class MigrationDefinitionWriter {
     }
 
     public function handleCreateTableStatement(CreateStatement $statement) {
-        $upDefinition = new MigrationDefinition;
-
         $tableName = $statement->name->table;
-        $upDefinition->append("Schema::create('$tableName', function (Blueprint \$table) {");
+        $this->upDefinition->append("Schema::create('$tableName', function (Blueprint \$table) {");
+        $this->downDefinition->append("Schema::dropIfExists('$tableName');");
 
         foreach($statement->fields as $field) {
             if (!empty($field->name) && !empty($field->type)) {
                 if (!empty($this->columnBlueprints[$field->type->name])) {
-                    $upDefinition->append($this->columnBlueprints[$field->type->name]($field));
-                    $upDefinition->increaseIdentation();
+                    $this->upDefinition->append($this->columnBlueprints[$field->type->name]($field));
+                    $this->upDefinition->increaseIdentation();
 
                     $options = array_merge($field->type->options->options, $field->options->options);
                     foreach ($options as $option) {
                         $optionName = is_array($option) ? $option['name'] : $option;
                         if (!empty($this->columnModifierBlueprints['whitelist'][$optionName])) {
-                            $upDefinition->append($this->columnModifierBlueprints['whitelist'][$optionName]($field, $option));
+                            $this->upDefinition->append($this->columnModifierBlueprints['whitelist'][$optionName]($field, $option));
                         }
                     }
 
@@ -256,12 +260,12 @@ class MigrationDefinitionWriter {
                         }
 
                         if (!$found) {
-                            $upDefinition->append($blacklistOption($field, $option));
+                            $this->upDefinition->append($blacklistOption($field, $option));
                         }
                     }
 
-                    $upDefinition->append(';', false, false);
-                    $upDefinition->decreaseIdentation();
+                    $this->upDefinition->append(';', false, false);
+                    $this->upDefinition->decreaseIdentation();
                 }
             }
             if (!empty($field->key)) {
@@ -270,60 +274,71 @@ class MigrationDefinitionWriter {
 
                 if ($field->key->type  === 'KEY') {
                     if (count($field->key->columns) == 1) {
-                        $upDefinition->append(sprintf("\$table->index('%s', '%s')", $field->key->columns[0]['name'], $field->key->name));
+                        $this->upDefinition->append(sprintf("\$table->index('%s', '%s')", $field->key->columns[0]['name'], $field->key->name));
                     }
                     else {
                         $references = array_column($field->key->columns, 'name');
-                        $upDefinition->append(sprintf("\$table->index(['" . implode("', '", $references) . "'], '%s')", $field->key->name));
+                        $this->upDefinition->append(sprintf("\$table->index(['" . implode("', '", $references) . "'], '%s')", $field->key->name));
                     }
 
-                    $upDefinition->append(';', false, false);
+                    $this->upDefinition->append(';', false, false);
                 }
 
                 if ($field->key->type  === 'FOREIGN KEY') {
                     if (count($field->key->columns) == 1) {
-                        $upDefinition->append(sprintf("\$table->foreign('%s', '%s')", $field->key->columns[0]['name'], $field->name));
+                        $this->upDefinition->append(sprintf("\$table->foreign('%s', '%s')", $field->key->columns[0]['name'], $field->name));
                     }
                     else {
                         $references = array_column($field->key->columns, 'name');
-                        $upDefinition->append(sprintf("\$table->foreign(['" . implode("', '", $references) . "'], '%s')", $field->key->name));
+                        $this->upDefinition->append(sprintf("\$table->foreign(['" . implode("', '", $references) . "'], '%s')", $field->key->name));
                     }
 
                     if (!empty($field->references)) {
-                        $upDefinition->increaseIdentation();
+                        $this->upDefinition->increaseIdentation();
 
                         if (!empty($field->references->columns)) {
                             if (count($field->references->columns) == 1) {
-                                $upDefinition->append(sprintf("->references('%s')", $field->references->columns[0]));
+                                $this->upDefinition->append(sprintf("->references('%s')", $field->references->columns[0]));
                             }
                             else {
-                                $upDefinition->append("->references(['" . implode("', '", $field->references->columns) . "'])");
+                                $this->upDefinition->append("->references(['" . implode("', '", $field->references->columns) . "'])");
                             }
                         }
 
                         if (!empty($field->references->columns)) {
-                            $upDefinition->append(sprintf("->on('%s')", $field->references->table->table));
+                            $this->upDefinition->append(sprintf("->on('%s')", $field->references->table->table));
                         }
 
                         if (!empty($field->references->options)) {
                             if (!empty($field->references->options->options)) {
                                 foreach($field->references->options->options as $referencesOption) {
-                                    $upDefinition->append($this->referencesOptionBlueprints[$referencesOption['name']]($referencesOption['value']), false, false);
+                                    $this->upDefinition->append($this->referencesOptionBlueprints[$referencesOption['name']]($referencesOption['value']), false, false);
                                 }
                             }
                         }
 
-                        $upDefinition->decreaseIdentation();
+                        $this->upDefinition->decreaseIdentation();
                     }
 
-                    $upDefinition->append(';', false, false);
+                    $this->upDefinition->append(';', false, false);
                 }
             }
         }
 
-        $upDefinition->decreaseIdentation();
-        $upDefinition->append('});');
+        $this->upDefinition->decreaseIdentation();
+        $this->upDefinition->append('});');
+    }
 
-        return $upDefinition;
+    public function getUpDefinition() {
+        return $this->upDefinition;
+    }
+
+    public function getDownDefinition() {
+        return $this->downDefinition;
+    }
+
+    public function reset() {
+        $this->upDefinition = new MigrationDefinition;
+        $this->downDefinition = new MigrationDefinition;
     }
 }
