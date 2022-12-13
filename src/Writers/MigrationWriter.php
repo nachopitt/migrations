@@ -4,7 +4,7 @@ namespace Nachopitt\Migrations\Writers;
 
 use Illuminate\Support\Str;
 use Nachopitt\Migrations\MigrationDefinition;
-use PhpMyAdmin\SqlParser\Statement;
+use PhpMyAdmin\SqlParser\Statements\CreateStatement;
 
 class MigrationWriter {
 
@@ -226,7 +226,7 @@ class MigrationWriter {
         }
     }
 
-    public function handleStatement(Statement $statement) {
+    public function handleCreateTableStatement(CreateStatement $statement) {
         $definition = new MigrationDefinition;
 
         foreach($statement->fields as $field) {
