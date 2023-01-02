@@ -22,7 +22,8 @@ class MigrateImportCommand extends MigrateMakeCommand
         {--schema= : The name of the schema}
         {--path= : The location where the migration file should be created}
         {--realpath : Indicate any provided migration file paths are pre-resolved absolute paths}
-        {--fullpath : Output the full path of the migration}';
+        {--fullpath : Output the full path of the migration}
+        {--squash : Generate one migration file instead of multiple files}';
 
     /**
      * The console command description.
@@ -48,6 +49,7 @@ class MigrateImportCommand extends MigrateMakeCommand
         $defaultDatabase = config("database.connections.mysql.database");
         $schemaName = $this->option('schema') ?: $defaultDatabase;
         $sqlImportFile = $this->argument('file') ?: "database_model/${defaultDatabase}.sql";
+        $squash = $this->option('squash');
 
         $sqlImportFileContents = File::get($sqlImportFile);
 
@@ -58,15 +60,17 @@ class MigrateImportCommand extends MigrateMakeCommand
             if ($statement instanceof CreateStatement && in_array('TABLE', $statement->options->options)) {
                 $migrationWriter->handleCreateTableStatement($statement);
 
-                $upDefinition = $migrationWriter->getUpDefinition();
-                $this->creator->setUpDefinition($upDefinition->get());
+                if (!$squash) {
+                    $upDefinition = $migrationWriter->getUpDefinition();
+                    $this->creator->setUpDefinition($upDefinition->get());
 
-                $downDefinition = $migrationWriter->getDownDefinition();
-                $this->creator->setDownDefinition($downDefinition->get());
+                    $downDefinition = $migrationWriter->getDownDefinition();
+                    $this->creator->setDownDefinition($downDefinition->get());
 
-                $this->writeMigration(sprintf('create_%s_table', $statement->name->table), $statement->name->table, true);
+                    $this->writeMigration(sprintf('create_%s_table', $statement->name->table), $statement->name->table, true);
 
-                $migrationWriter->reset();
+                    $migrationWriter->reset();
+                }
             }
             else if ($statement instanceof AlterStatement) {
                 $migrationWriter->handleAlterTableStatement($statement);
@@ -84,6 +88,18 @@ class MigrateImportCommand extends MigrateMakeCommand
             else if ($statement instanceof DropStatement) {
                 
             }
+        }
+
+        if ($squash) {
+            $upDefinition = $migrationWriter->getUpDefinition();
+            $this->creator->setUpDefinition($upDefinition->get());
+
+            $downDefinition = $migrationWriter->getDownDefinition();
+            $this->creator->setDownDefinition($downDefinition->get());
+
+            $this->writeMigration(sprintf('create_%s_database', $schemaName), $schemaName, true);
+
+            $migrationWriter->reset();
         }
 
         $this->composer->dumpAutoloads();
