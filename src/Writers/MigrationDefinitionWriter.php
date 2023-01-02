@@ -235,6 +235,7 @@ class MigrationDefinitionWriter {
     public function handleCreateTableStatement(CreateStatement $statement) {
         $tableName = $statement->name->table;
         $this->upDefinition->append("Schema::create('$tableName', function (Blueprint \$table) {");
+        $this->upDefinition->increaseIdentation();
         $this->downDefinition->append("Schema::dropIfExists('$tableName');");
 
         foreach($statement->fields as $field) {

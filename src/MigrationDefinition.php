@@ -9,7 +9,7 @@ class MigrationDefinition {
 
     public function __construct() {
         $this->definition = '';
-        $this->indentation = 3;
+        $this->indentation = 2;
     }
 
     public function setIndentation($indentation) {
