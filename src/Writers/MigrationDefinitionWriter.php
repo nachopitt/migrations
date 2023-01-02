@@ -223,9 +223,8 @@ class MigrationDefinitionWriter {
             switch ($referencesOption) {
                 case 'ON DELETE':
                 case 'ON UPDATE':
-                    $actionBlueprint = $this->actionBlueprints[$action];
-                    $this->referencesOptionBlueprints[$referencesOption] = function ($action) use ($referencesOption, $actionBlueprint) {
-                        return sprintf("->%s('%s')", Str::camel(Str::lower(Str::replace(' ', '_', $referencesOption))), $actionBlueprint());
+                    $this->referencesOptionBlueprints[$referencesOption] = function ($action) use ($referencesOption) {
+                        return sprintf("->%s('%s')", Str::camel(Str::lower(Str::replace(' ', '_', $referencesOption))), $this->actionBlueprints[$action]());
                     };
                     break;
             }
