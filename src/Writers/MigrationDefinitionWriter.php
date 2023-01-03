@@ -6,6 +6,7 @@ use Illuminate\Support\Str;
 use Nachopitt\Migrations\MigrationDefinition;
 use PhpMyAdmin\SqlParser\Statements\AlterStatement;
 use PhpMyAdmin\SqlParser\Statements\CreateStatement;
+use PhpMyAdmin\SqlParser\Token;
 
 class MigrationDefinitionWriter {
 
@@ -337,7 +338,15 @@ class MigrationDefinitionWriter {
 
         foreach ($statement->altered as $alterOperation) {
             if (!array_diff($alterOperation->options->options, ['ADD', 'COLUMN'])) {
-                $this->upDefinition->append(sprintf("\$table->%s('%s');", 'integer', $alterOperation->field->column));
+                $tokens = array_column($alterOperation->unknown, 'value');
+
+                foreach ($this->allowedDataTypes as $allowedDataType) {
+                    if (in_array($allowedDataType, $tokens)) {
+                        $this->upDefinition->append($this->columnBlueprints[$allowedDataType]($alterOperation->field->column));
+                    }
+                }
+
+                $this->upDefinition->append(';', false, false);
             }
         }
 
