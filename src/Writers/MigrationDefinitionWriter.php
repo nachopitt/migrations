@@ -181,6 +181,9 @@ class MigrationDefinitionWriter {
                 'AUTO_INCREMENT' => function ($field, $option) {
                     return "->autoIncrement()";
                 },
+                'CHARACTER SET' => function ($field, $option) {
+                    return sprintf("->charset('%s')", $option['value']);
+                },
                 'COLLATE' => function ($field, $option) {
                     return sprintf("->collation('%s')", $option['value']);
                 },
