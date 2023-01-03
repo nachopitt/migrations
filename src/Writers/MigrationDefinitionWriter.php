@@ -345,7 +345,12 @@ class MigrationDefinitionWriter {
 
                 foreach ($this->allowedDataTypes as $allowedDataType) {
                     if (in_array($allowedDataType, $tokens)) {
-                        $this->upDefinition->append($this->columnBlueprints[$allowedDataType]($alterOperation->field->column));
+                        $parameters = [];
+                        $parametersKeys = array_keys(array_intersect($tokens, ['(', ')']));
+                        if (!empty($parametersKeys)) {
+                            $parameters = array_diff(array_slice($tokens, $parametersKeys[0] + 1, $parametersKeys[1] - $parametersKeys[0] - 1), [',']);
+                        }
+                        $this->upDefinition->append($this->columnBlueprints[$allowedDataType]($alterOperation->field->column, $parameters));
                     }
                 }
 
