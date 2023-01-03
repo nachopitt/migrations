@@ -175,32 +175,32 @@ class MigrationDefinitionWriter {
 
         $this->columnModifierBlueprints = [
             'whitelist' => [
-                'UNSIGNED' => function ($option) {
+                'UNSIGNED' => function ($optionValue) {
                     return "->unsigned()";
                 },
-                'AUTO_INCREMENT' => function ($option) {
+                'AUTO_INCREMENT' => function ($optionValue) {
                     return "->autoIncrement()";
                 },
-                'CHARACTER SET' => function ($option) {
-                    return sprintf("->charset('%s')", $option['value']);
+                'CHARACTER SET' => function ($optionValue) {
+                    return sprintf("->charset('%s')", $optionValue);
                 },
-                'COLLATE' => function ($option) {
-                    return sprintf("->collation('%s')", $option['value']);
+                'COLLATE' => function ($optionValue) {
+                    return sprintf("->collation('%s')", $optionValue);
                 },
-                'DEFAULT' => function ($option) {
-                    if ($option['value'] === 'NULL')
+                'DEFAULT' => function ($optionValue) {
+                    if ($optionValue === 'NULL')
                         return "->default(NULL)";
                     else {
                         $format = '%s';
-                        if (is_numeric($option['value'])) {
+                        if (is_numeric($optionValue)) {
                             $format = '"' . $format . '"';
                         }
-                        return sprintf("->default($format)", $option['value']);
+                        return sprintf("->default($format)", $optionValue);
                     }
                 },
             ],
             'blacklist' => [
-                'NOT NULL' => function ($option) {
+                'NOT NULL' => function ($optionValue) {
                     return "->nullable()";
                 },
             ]
@@ -251,7 +251,15 @@ class MigrationDefinitionWriter {
                     foreach ($this->columnModifierBlueprints['whitelist'] as $whitelistOptionName => $whitelistOption) {
                         $found = false;
                         foreach ($options as $option) {
-                            $optionName = is_array($option) ? $option['name'] : $option;
+                            if (is_array($option)) {
+                                $optionName = $option['name'];
+                                $optionValue = $option['value'];
+                            }
+                            else {
+                                $optionName = $option;
+                                $optionValue = null;
+                            }
+
                             if ($optionName === $whitelistOptionName) {
                                 $found = true;
                                 break;
@@ -259,21 +267,29 @@ class MigrationDefinitionWriter {
                         }
 
                         if ($found) {
-                            $this->upDefinition->append($whitelistOption($option));
+                            $this->upDefinition->append($whitelistOption($optionValue));
                         }
                     }
 
                     foreach ($this->columnModifierBlueprints['blacklist'] as $blacklistOptionName => $blacklistOption) {
                         $found = false;
                         foreach ($options as $option) {
-                            $optionName = is_array($option) ? $option['name'] : $option;
+                            if (is_array($option)) {
+                                $optionName = $option['name'];
+                                $optionValue = $option['value'];
+                            }
+                            else {
+                                $optionName = $option;
+                                $optionValue = null;
+                            }
+
                             if ($optionName === $blacklistOptionName) {
                                 $found = true;
                             }
                         }
 
                         if (!$found) {
-                            $this->upDefinition->append($blacklistOption($option));
+                            $this->upDefinition->append($blacklistOption($optionValue));
                         }
                     }
 
