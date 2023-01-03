@@ -54,119 +54,119 @@ class MigrationDefinitionWriter {
             switch ($allowedDataType) {
                 case 'INT':
                 case 'INTEGER':
-                    $this->columnBlueprints[$allowedDataType] = function ($field) {
-                        return sprintf("\$table->integer('%s')", $field->name);
+                    $this->columnBlueprints[$allowedDataType] = function ($fieldName, $parameters = []) {
+                        return sprintf("\$table->integer('%s')", $fieldName);
                     };
                     break;
                 case 'SMALLINT':
-                    $this->columnBlueprints[$allowedDataType] = function ($field) {
-                        return sprintf("\$table->smallInteger('%s')", $field->name);
+                    $this->columnBlueprints[$allowedDataType] = function ($fieldName, $parameters = []) {
+                        return sprintf("\$table->smallInteger('%s')", $fieldName);
                     };
                     break;
                 case 'TINYINT':
-                    $this->columnBlueprints[$allowedDataType] = function ($field) {
-                        return sprintf("\$table->tinyInteger('%s')", $field->name);
+                    $this->columnBlueprints[$allowedDataType] = function ($fieldName, $parameters = []) {
+                        return sprintf("\$table->tinyInteger('%s')", $fieldName);
                     };
                     break;
                 case 'MEDIUMINT':
-                    $this->columnBlueprints[$allowedDataType] = function ($field) {
-                        return sprintf("\$table->mediumInteger('%s')", $field->name);
+                    $this->columnBlueprints[$allowedDataType] = function ($fieldName, $parameters = []) {
+                        return sprintf("\$table->mediumInteger('%s')", $fieldName);
                     };
                     break;
                 case 'BIGINT':
-                    $this->columnBlueprints[$allowedDataType] = function ($field) {
-                        return sprintf("\$table->bigInteger('%s')", $field->name);
+                    $this->columnBlueprints[$allowedDataType] = function ($fieldName, $parameters = []) {
+                        return sprintf("\$table->bigInteger('%s')", $fieldName);
                     };
                     break;
                 case 'DEC':
                 case 'FIXED':
                 case 'NUMERIC':
                 case 'DECIMAL':
-                    $this->columnBlueprints[$allowedDataType] = function ($field) {
-                        return sprintf("\$table->decimal('%s')", $field->name);
+                    $this->columnBlueprints[$allowedDataType] = function ($fieldName, $parameters = []) {
+                        return sprintf("\$table->decimal('%s')", $fieldName);
                     };
                     break;
                 case 'FLOAT':
-                    $this->columnBlueprints[$allowedDataType] = function ($field) {
-                        return sprintf("\$table->float('%s')", $field->name);
+                    $this->columnBlueprints[$allowedDataType] = function ($fieldName, $parameters = []) {
+                        return sprintf("\$table->float('%s')", $fieldName);
                     };
                     break;
                 case 'DOUBLE':
                 case 'REAL':
                 case 'DOUBLE PRECISION':
-                    $this->columnBlueprints[$allowedDataType] = function ($field) {
-                        return sprintf("\$table->double('%s')", $field->name);
+                    $this->columnBlueprints[$allowedDataType] = function ($fieldName, $parameters = []) {
+                        return sprintf("\$table->double('%s')", $fieldName);
                     };
                     break;
                 case 'BIT':
                 case 'BOOLEAN':
-                    $this->columnBlueprints[$allowedDataType] = function ($field) {
-                        return sprintf("\$table->boolean('%s')", $field->name);
+                    $this->columnBlueprints[$allowedDataType] = function ($fieldName, $parameters = []) {
+                        return sprintf("\$table->boolean('%s')", $fieldName);
                     };
                     break;
                 case 'DATE':
-                    $this->columnBlueprints[$allowedDataType] = function ($field) {
-                        return sprintf("\$table->date('%s')", $field->name);
+                    $this->columnBlueprints[$allowedDataType] = function ($fieldName, $parameters = []) {
+                        return sprintf("\$table->date('%s')", $fieldName);
                     };
                     break;
                 case 'DATETIME':
-                    $this->columnBlueprints[$allowedDataType] = function ($field) {
-                        return sprintf("\$table->dateTime('%s')", $field->name);
+                    $this->columnBlueprints[$allowedDataType] = function ($fieldName, $parameters = []) {
+                        return sprintf("\$table->dateTime('%s')", $fieldName);
                     };
                     break;
                 case 'TIMESTAMP':
-                    $this->columnBlueprints[$allowedDataType] = function ($field) {
-                        return sprintf("\$table->timestamp('%s')", $field->name);
+                    $this->columnBlueprints[$allowedDataType] = function ($fieldName, $parameters = []) {
+                        return sprintf("\$table->timestamp('%s')", $fieldName);
                     };
                     break;
                 case 'TIME':
-                    $this->columnBlueprints[$allowedDataType] = function ($field) {
-                        return sprintf("\$table->time('%s')", $field->name);
+                    $this->columnBlueprints[$allowedDataType] = function ($fieldName, $parameters = []) {
+                        return sprintf("\$table->time('%s')", $fieldName);
                     };
                     break;
                 case 'YEAR':
-                    $this->columnBlueprints[$allowedDataType] = function ($field) {
-                        return sprintf("\$table->year('%s')", $field->name);
+                    $this->columnBlueprints[$allowedDataType] = function ($fieldName, $parameters = []) {
+                        return sprintf("\$table->year('%s')", $fieldName);
                     };
                     break;
                 case 'CHAR':
-                    $this->columnBlueprints[$allowedDataType] = function ($field) {
-                        return sprintf("\$table->char('%s')", $field->name);
+                    $this->columnBlueprints[$allowedDataType] = function ($fieldName, $parameters = []) {
+                        return sprintf("\$table->char('%s')", $fieldName);
                     };
                     break;
                 case 'VARCHAR':
-                    $this->columnBlueprints[$allowedDataType] = function ($field) {
-                        if (empty($field->type->parameters)) {
-                            return sprintf("\$table->string('%s')", $field->name);
+                    $this->columnBlueprints[$allowedDataType] = function ($fieldName, $parameters = []) {
+                        if (empty($parameters)) {
+                            return sprintf("\$table->string('%s')", $fieldName);
                         }
                         else {
-                            return sprintf("\$table->string('%s', %u)", $field->name, $field->type->parameters[0]);
+                            return sprintf("\$table->string('%s', %u)", $fieldName, $parameters[0]);
                         }
                     };
                     break;
                 case 'BLOB':
-                    $this->columnBlueprints[$allowedDataType] = function ($field) {
-                        return sprintf("\$table->binary('%s')", $field->name);
+                    $this->columnBlueprints[$allowedDataType] = function ($fieldName, $parameters = []) {
+                        return sprintf("\$table->binary('%s')", $fieldName);
                     };
                     break;
                 case 'TINYTEXT':
-                    $this->columnBlueprints[$allowedDataType] = function ($field) {
-                        return sprintf("\$table->tinyText('%s')", $field->name);
+                    $this->columnBlueprints[$allowedDataType] = function ($fieldName, $parameters = []) {
+                        return sprintf("\$table->tinyText('%s')", $fieldName);
                     };
                     break;
                 case 'TEXT':
-                    $this->columnBlueprints[$allowedDataType] = function ($field) {
-                        return sprintf("\$table->text('%s')", $field->name);
+                    $this->columnBlueprints[$allowedDataType] = function ($fieldName, $parameters = []) {
+                        return sprintf("\$table->text('%s')", $fieldName);
                     };
                     break;
                 case 'MEDIUMTEXT':
-                    $this->columnBlueprints[$allowedDataType] = function ($field) {
-                        return sprintf("\$table->mediumText('%s')", $field->name);
+                    $this->columnBlueprints[$allowedDataType] = function ($fieldName, $parameters = []) {
+                        return sprintf("\$table->mediumText('%s')", $fieldName);
                     };
                     break;
                 case 'LONGTEXT':
-                    $this->columnBlueprints[$allowedDataType] = function ($field) {
-                        return sprintf("\$table->longText('%s')", $field->name);
+                    $this->columnBlueprints[$allowedDataType] = function ($fieldName, $parameters = []) {
+                        return sprintf("\$table->longText('%s')", $fieldName);
                     };
                     break;
             }
@@ -240,7 +240,7 @@ class MigrationDefinitionWriter {
         foreach ($statement->fields as $field) {
             if (!empty($field->name) && !empty($field->type)) {
                 if (!empty($this->columnBlueprints[$field->type->name])) {
-                    $this->upDefinition->append($this->columnBlueprints[$field->type->name]($field));
+                    $this->upDefinition->append($this->columnBlueprints[$field->type->name]($field->name, $field->type->parameters));
                     $this->upDefinition->increaseIdentation();
 
                     $options = array_merge($field->type->options->options, $field->options->options);
