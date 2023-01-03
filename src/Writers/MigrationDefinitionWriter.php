@@ -248,10 +248,18 @@ class MigrationDefinitionWriter {
                     $this->upDefinition->increaseIdentation();
 
                     $options = array_merge($field->type->options->options, $field->options->options);
-                    foreach ($options as $option) {
-                        $optionName = is_array($option) ? $option['name'] : $option;
-                        if (!empty($this->columnModifierBlueprints['whitelist'][$optionName])) {
-                            $this->upDefinition->append($this->columnModifierBlueprints['whitelist'][$optionName]($option));
+                    foreach ($this->columnModifierBlueprints['whitelist'] as $whitelistOptionName => $whitelistOption) {
+                        $found = false;
+                        foreach ($options as $option) {
+                            $optionName = is_array($option) ? $option['name'] : $option;
+                            if ($optionName === $whitelistOptionName) {
+                                $found = true;
+                                break;
+                            }
+                        }
+
+                        if ($found) {
+                            $this->upDefinition->append($whitelistOption($option));
                         }
                     }
 
