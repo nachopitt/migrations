@@ -198,6 +198,9 @@ class MigrationDefinitionWriter {
                         return sprintf("->default($format)", $optionValue);
                     }
                 },
+                'AFTER' => function ($optionValue) {
+                    return sprintf("->after('%s')", $optionValue);
+                },
             ],
             'blacklist' => [
                 'NOT NULL' => function ($optionValue) {
