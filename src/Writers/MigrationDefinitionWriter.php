@@ -332,7 +332,8 @@ class MigrationDefinitionWriter {
 
     public function handleAlterTableStatement(AlterStatement $statement) {
         $tableName = $statement->table->table;
-        $this->upDefinition->append("Schema::table('$tableName', function (Blueprint \$table) {");
+        $this->upDefinition->append("Schema::table('$tableName', function (Blueprint \$table) {", false);
+        $this->upDefinition->increaseIdentation();
 
         foreach($statement->altered as $alterOperation) {
             if (!array_diff($alterOperation->options->options, ['ADD', 'COLUMN'])) {
