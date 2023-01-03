@@ -233,9 +233,9 @@ class MigrationDefinitionWriter {
 
     public function handleCreateTableStatement(CreateStatement $statement) {
         $tableName = $statement->name->table;
-        $this->upDefinition->append("Schema::create('$tableName', function (Blueprint \$table) {");
+        $this->upDefinition->append("Schema::create('$tableName', function (Blueprint \$table) {", false);
         $this->upDefinition->increaseIdentation();
-        $this->downDefinition->append("Schema::dropIfExists('$tableName');");
+        $this->downDefinition->append("Schema::dropIfExists('$tableName');", false);
 
         foreach($statement->fields as $field) {
             if (!empty($field->name) && !empty($field->type)) {
@@ -345,11 +345,11 @@ class MigrationDefinitionWriter {
     }
 
     public function getUpDefinition() {
-        return $this->upDefinition;
+        return $this->upDefinition->get();
     }
 
     public function getDownDefinition() {
-        return $this->downDefinition;
+        return $this->downDefinition->get();
     }
 
     public function reset() {

@@ -7,6 +7,8 @@ class MigrationDefinition {
     private $definition;
     private $indentation;
 
+    private const TAB_SIZE = 4;
+
     public function __construct() {
         $this->definition = '';
         $this->indentation = 2;
@@ -25,19 +27,19 @@ class MigrationDefinition {
     }
 
     public function append($definition, $newLine = true, $indent = true) {
-        if (!empty($this->definition)) {
-            if ($newLine) {
-                $this->definition .= "\r";
-            }
+        if ($newLine) {
+            $this->definition .= "\n";
+        }
 
-            if ($indent) {
-                for ($i = 0; $i < $this->indentation; $i++) {
-                    $this->definition .= "\t";
-                }
-            }
+        if ($indent) {
+            $this->definition .= str_repeat(' ', $this->indentation * MigrationDefinition::TAB_SIZE);
         }
 
         $this->definition .= $definition;
+    }
+
+    public function newLine() {
+        $this->definition .= "\r";
     }
 
     public function get() {
