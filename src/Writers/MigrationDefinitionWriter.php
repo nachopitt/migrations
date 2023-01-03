@@ -50,7 +50,7 @@ class MigrationDefinitionWriter {
             'TEXT',
         ];
 
-        foreach($this->allowedDataTypes as $allowedDataType) {
+        foreach ($this->allowedDataTypes as $allowedDataType) {
             switch ($allowedDataType) {
                 case 'INT':
                 case 'INTEGER':
@@ -205,7 +205,7 @@ class MigrationDefinitionWriter {
         $this->actionBlueprints = [];
         $this->referencesOptionBlueprints = [];
 
-        foreach(['RESTRICT', 'CASCADE', 'SET NULL', 'NO ACTION', 'SET DEFAULT'] as $action) {
+        foreach (['RESTRICT', 'CASCADE', 'SET NULL', 'NO ACTION', 'SET DEFAULT'] as $action) {
             switch ($action) {
                 case 'RESTRICT':
                 case 'CASCADE':
@@ -219,7 +219,7 @@ class MigrationDefinitionWriter {
             }
         }
 
-        foreach(['ON DELETE', 'ON UPDATE'] as $referencesOption) {
+        foreach (['ON DELETE', 'ON UPDATE'] as $referencesOption) {
             switch ($referencesOption) {
                 case 'ON DELETE':
                 case 'ON UPDATE':
@@ -237,7 +237,7 @@ class MigrationDefinitionWriter {
         $this->upDefinition->increaseIdentation();
         $this->downDefinition->append("Schema::dropIfExists('$tableName');", false);
 
-        foreach($statement->fields as $field) {
+        foreach ($statement->fields as $field) {
             if (!empty($field->name) && !empty($field->type)) {
                 if (!empty($this->columnBlueprints[$field->type->name])) {
                     $this->upDefinition->append($this->columnBlueprints[$field->type->name]($field));
@@ -312,7 +312,7 @@ class MigrationDefinitionWriter {
 
                         if (!empty($field->references->options)) {
                             if (!empty($field->references->options->options)) {
-                                foreach($field->references->options->options as $referencesOption) {
+                                foreach ($field->references->options->options as $referencesOption) {
                                     $this->upDefinition->append($this->referencesOptionBlueprints[$referencesOption['name']]($referencesOption['value']), false, false);
                                 }
                             }
@@ -335,7 +335,7 @@ class MigrationDefinitionWriter {
         $this->upDefinition->append("Schema::table('$tableName', function (Blueprint \$table) {", false);
         $this->upDefinition->increaseIdentation();
 
-        foreach($statement->altered as $alterOperation) {
+        foreach ($statement->altered as $alterOperation) {
             if (!array_diff($alterOperation->options->options, ['ADD', 'COLUMN'])) {
                 $this->upDefinition->append(sprintf("\$table->%s('%s');", 'integer', $alterOperation->field->column));
             }
