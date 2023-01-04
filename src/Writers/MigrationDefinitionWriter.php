@@ -245,9 +245,9 @@ class MigrationDefinitionWriter {
 
     public function handleCreateTableStatement(CreateStatement $statement) {
         $tableName = $statement->name->table;
-        $this->upDefinition->append("Schema::create('$tableName', function (Blueprint \$table) {", false);
+        $this->upDefinition->append($this->createTableBlueprint($tableName), false);
         $this->upDefinition->increaseIndentation();
-        $this->downDefinition->append("Schema::dropIfExists('$tableName');", false);
+        $this->downDefinition->append($this->dropTableBlueprint($tableName), false);
 
         foreach ($statement->fields as $field) {
             if (!empty($field->name) && !empty($field->type)) {
@@ -295,40 +295,22 @@ class MigrationDefinitionWriter {
                 }
 
                 if ($field->key->type === 'INDEX') {
-                    if (count($field->key->columns) == 1) {
-                        $this->upDefinition->append(sprintf("\$table->index('%s', '%s')", $field->key->columns[0]['name'], $field->key->name));
-                    }
-                    else {
-                        $references = array_column($field->key->columns, 'name');
-                        $this->upDefinition->append(sprintf("\$table->index(['" . implode("', '", $references) . "'], '%s')", $field->key->name));
-                    }
-
+                    $this->upDefinition->append($this->keyBlueprint('index', array_column($field->key->columns, 'name'), $field->key->name));
                     $this->upDefinition->append(';', false, false);
                 }
 
                 if ($field->key->type  === 'FOREIGN KEY') {
-                    if (count($field->key->columns) == 1) {
-                        $this->upDefinition->append(sprintf("\$table->foreign('%s', '%s')", $field->key->columns[0]['name'], $field->name));
-                    }
-                    else {
-                        $references = array_column($field->key->columns, 'name');
-                        $this->upDefinition->append(sprintf("\$table->foreign(['" . implode("', '", $references) . "'], '%s')", $field->key->name));
-                    }
+                    $this->upDefinition->append($this->keyBlueprint('foreign', array_column($field->key->columns, 'name'), $field->name));
 
                     if (!empty($field->references)) {
                         $this->upDefinition->increaseIndentation();
 
                         if (!empty($field->references->columns)) {
-                            if (count($field->references->columns) == 1) {
-                                $this->upDefinition->append(sprintf("->references('%s')", $field->references->columns[0]));
-                            }
-                            else {
-                                $this->upDefinition->append("->references(['" . implode("', '", $field->references->columns) . "'])");
-                            }
+                            $this->upDefinition->append($this->referencesBlueprint($field->references->columns));
                         }
 
                         if (!empty($field->references->columns)) {
-                            $this->upDefinition->append(sprintf("->on('%s')", $field->references->table->table));
+                            $this->upDefinition->append($this->onBlueprint($field->references->table->table));
                         }
 
                         if (!empty($field->references->options)) {
@@ -353,7 +335,7 @@ class MigrationDefinitionWriter {
 
     public function handleAlterTableStatement(AlterStatement $statement) {
         $tableName = $statement->table->table;
-        $this->upDefinition->append("Schema::table('$tableName', function (Blueprint \$table) {", false);
+        $this->upDefinition->append($this->alterTableBlueprint($tableName), false);
         $this->upDefinition->increaseIndentation();
 
         foreach ($statement->altered as $alterOperation) {
@@ -395,7 +377,7 @@ class MigrationDefinitionWriter {
                     }
 
                     if ($alterOperationType === MigrationDefinitionWriter::ALTER_OPERATION_CHANGE_COLUMN) {
-                        $this->upDefinition->append('->change()');
+                        $this->upDefinition->append($this->changeBlueprint());
                     }
 
                     $this->upDefinition->append(';', false, false);
@@ -405,14 +387,7 @@ class MigrationDefinitionWriter {
                     $tokens = array_diff(array_column($alterOperation->unknown, 'value'), [' ']);
 
                     $references = $this->getParameters($tokens);
-
-                    if (count($references) == 1) {
-                        $this->upDefinition->append(sprintf("\$table->index('%s', '%s')", $references[0], $alterOperation->field->column));
-                    }
-                    else {
-                        $this->upDefinition->append(sprintf("\$table->index(['" . implode("', '", $references) . "'], '%s')", $alterOperation->field->column));
-                    }
-
+                    $this->upDefinition->append($this->keyBlueprint('index', $references, $alterOperation->field->column));
                     $this->upDefinition->append(';', false, false);
                     break;
             }
@@ -457,6 +432,67 @@ class MigrationDefinitionWriter {
         else {
             return false;
         }
+    }
+
+    protected function createTableBlueprint($tableName) {
+        return "Schema::create('$tableName', function (Blueprint \$table) {";
+    }
+
+    protected function alterTableBlueprint($tableName) {
+        return "Schema::table('$tableName', function (Blueprint \$table) {";
+    }
+
+    protected function dropTableBlueprint($tableName, $ifExists = true) {
+        return sprintf("Schema::drop%s('%s');", ($ifExists ? 'IfExists' : ''), $tableName);
+    }
+
+    protected function keyBlueprint($type, $fieldNames, $indexName = null) {
+        $types = ['primary', 'index', 'foreign'];
+        $indexName = $indexName !== null ? "'$indexName'" : 'null';
+
+        if (in_array($type, $types)) {
+            if (is_array($fieldNames) && count($fieldNames) > 1) {
+                return sprintf("\$table->%s(['%s'], %s)", $type, implode("', '", $fieldNames), $indexName);
+            }
+            else {
+                $fieldName = '';
+                if (is_string($fieldNames)) {
+                    $fieldName = $fieldNames;
+                }
+                else if (count($fieldNames) === 1) {
+                    $fieldName = $fieldNames[0];
+                }
+
+                return sprintf("\$table->%s('%s', %s)", $type, $fieldName, $indexName);
+            }
+        }
+
+        return false;
+    }
+
+    protected function referencesBlueprint($fieldNames) {
+        if (is_array($fieldNames) && count($fieldNames) > 1) {
+            return sprintf("->references(['%s'])", implode("', '", $fieldNames));
+        }
+        else {
+            $fieldName = '';
+            if (is_string($fieldNames)) {
+                $fieldName = $fieldNames;
+            }
+            else if (count($fieldNames) === 1) {
+                $fieldName = $fieldNames[0];
+            }
+
+            return sprintf("->references('%s')", $fieldName);
+        }
+    }
+
+    protected function onBlueprint($tableName) {
+        return sprintf("->on('%s')", $tableName);
+    }
+
+    protected function changeBlueprint() {
+        return '->change()';
     }
 
     public function getUpDefinition() {
