@@ -18,6 +18,11 @@ class MigrationDefinitionWriter {
     protected MigrationDefinition $upDefinition;
     protected MigrationDefinition $downDefinition;
 
+    protected const ALTER_OPERATION_ADD_COLUMN      = 0;
+    protected const ALTER_OPERATION_CHANGE_COLUMN   = 1;
+    protected const ALTER_OPERATION_ADD_KEY         = 2;
+    protected const ALTER_OPERATION_ADD_CONSTRAINT  = 3;
+
     public function __construct()
     {
         $this->upDefinition = new MigrationDefinition;
@@ -394,6 +399,32 @@ class MigrationDefinitionWriter {
 
         $this->upDefinition->decreaseIndentation();
         $this->upDefinition->append('});');
+    }
+
+    protected function getAlterOperationType($options) {
+        if (is_array($options)) {
+            if (!array_diff($options, ['ADD'])) {
+                return MigrationDefinitionWriter::ALTER_OPERATION_ADD_COLUMN;
+            }
+            else if (!array_diff($options, ['ADD', 'COLUMN'])) {
+                return MigrationDefinitionWriter::ALTER_OPERATION_ADD_COLUMN;
+            }
+            else if (!array_diff($options, ['CHANGE'])) {
+                return MigrationDefinitionWriter::ALTER_OPERATION_CHANGE_COLUMN;
+            }
+            else if (!array_diff($options, ['CHANGE', 'COLUMN'])) {
+                return MigrationDefinitionWriter::ALTER_OPERATION_CHANGE_COLUMN;
+            }
+            else if (!array_diff($options, ['ADD', 'KEY'])) {
+                return MigrationDefinitionWriter::ALTER_OPERATION_ADD_KEY;
+            }
+            else if (!array_diff($options, ['ADD', 'CONSTRAINT'])) {
+                return MigrationDefinitionWriter::ALTER_OPERATION_ADD_CONSTRAINT;
+            }
+        }
+        else {
+            return false;
+        }
     }
 
     public function getUpDefinition() {
