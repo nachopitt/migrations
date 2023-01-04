@@ -357,43 +357,55 @@ class MigrationDefinitionWriter {
         $this->upDefinition->increaseIndentation();
 
         foreach ($statement->altered as $alterOperation) {
-            if (!array_diff($alterOperation->options->options, ['ADD', 'COLUMN'])) {
-                $tokens = array_diff(array_column($alterOperation->unknown, 'value'), [' ']);
-                $keys = array_keys($tokens);
+            $alterOperationType = $this->getAlterOperationType($alterOperation->options->options);
 
-                foreach ($keys as $key => $tokenKey) {
-                    $token = $tokens[$tokenKey];
+            switch ($alterOperationType) {
+                case MigrationDefinitionWriter::ALTER_OPERATION_ADD_COLUMN:
+                case MigrationDefinitionWriter::ALTER_OPERATION_CHANGE_COLUMN:
+                    $tokens = array_diff(array_column($alterOperation->unknown, 'value'), [' ']);
+                    $keys = array_keys($tokens);
 
-                    if (in_array($token, $this->allowedDataTypes)) {
-                        $parameters = [];
-                        $parametersKeys = array_keys(array_intersect($tokens, ['(', ')']));
+                    foreach ($keys as $key => $tokenKey) {
+                        $token = $tokens[$tokenKey];
 
-                        if (!empty($parametersKeys)) {
-                            $parameters = array_diff(array_slice($tokens, $parametersKeys[0] + 1, $parametersKeys[1] - $parametersKeys[0] - 1), [',']);
+                        if (in_array(Str::upper($token), $this->allowedDataTypes)) {
+                            $parameters = [];
+                            $parametersKeys = array_keys(array_intersect($tokens, ['(', ')']));
+
+                            if (!empty($parametersKeys)) {
+                                $parameters = array_diff(array_slice($tokens, $parametersKeys[0] + 1, $parametersKeys[1] - $parametersKeys[0] - 1), [',']);
+                            }
+
+                            $this->upDefinition->append($this->columnBlueprints[Str::upper($token)]($alterOperation->field->column, $parameters));
+                            $this->upDefinition->increaseIndentation();
                         }
+                        else if (array_key_exists($token, $this->columnModifierBlueprints['whitelist'])) {
+                            $optionValue = null;
 
-                        $this->upDefinition->append($this->columnBlueprints[$token]($alterOperation->field->column, $parameters));
-                        $this->upDefinition->increaseIndentation();
-                    }
-                    else if (array_key_exists($token, $this->columnModifierBlueprints['whitelist'])) {
-                        $optionValue = null;
+                            if ($token == 'AFTER') {
+                                $optionValue = $tokens[$keys[$key + 1]];
+                            }
+                            else if ($token == 'DEFAULT') {
+                                $optionValue = $tokens[$keys[$key + 1]];
+                            }
 
-                        if ($token == 'AFTER') {
-                            $optionValue = $tokens[$keys[$key + 1]];
+                            $this->upDefinition->append($this->columnModifierBlueprints['whitelist'][$token]($optionValue));
                         }
-
-                        $this->upDefinition->append($this->columnModifierBlueprints['whitelist'][$token]($optionValue));
                     }
-                }
 
-                foreach ($this->columnModifierBlueprints['blacklist'] as $blacklistOptionName => $blacklistOptionBlueprint) {
-                    if (!in_array($blacklistOptionName, $tokens)) {
-                        $this->upDefinition->append($blacklistOptionBlueprint());
+                    foreach ($this->columnModifierBlueprints['blacklist'] as $blacklistOptionName => $blacklistOptionBlueprint) {
+                        if (!in_array($blacklistOptionName, $tokens)) {
+                            $this->upDefinition->append($blacklistOptionBlueprint());
+                        }
                     }
-                }
 
-                $this->upDefinition->append(';', false, false);
-                $this->upDefinition->decreaseIndentation();
+                    if ($alterOperationType === MigrationDefinitionWriter::ALTER_OPERATION_CHANGE_COLUMN) {
+                        $this->upDefinition->append('->change()');
+                    }
+
+                    $this->upDefinition->append(';', false, false);
+                    $this->upDefinition->decreaseIndentation();
+                    break;
             }
         }
 
