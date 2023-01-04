@@ -401,6 +401,20 @@ class MigrationDefinitionWriter {
                     $this->upDefinition->append(';', false, false);
                     $this->upDefinition->decreaseIndentation();
                     break;
+                case MigrationDefinitionWriter::ALTER_OPERATION_ADD_KEY:
+                    $tokens = array_diff(array_column($alterOperation->unknown, 'value'), [' ']);
+
+                    $references = $this->getParameters($tokens);
+
+                    if (count($references) == 1) {
+                        $this->upDefinition->append(sprintf("\$table->index('%s', '%s')", $references[0], $alterOperation->field->column));
+                    }
+                    else {
+                        $this->upDefinition->append(sprintf("\$table->index(['" . implode("', '", $references) . "'], '%s')", $alterOperation->field->column));
+                    }
+
+                    $this->upDefinition->append(';', false, false);
+                    break;
             }
         }
 
