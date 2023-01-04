@@ -241,14 +241,14 @@ class MigrationDefinitionWriter {
     public function handleCreateTableStatement(CreateStatement $statement) {
         $tableName = $statement->name->table;
         $this->upDefinition->append("Schema::create('$tableName', function (Blueprint \$table) {", false);
-        $this->upDefinition->increaseIdentation();
+        $this->upDefinition->increaseIndentation();
         $this->downDefinition->append("Schema::dropIfExists('$tableName');", false);
 
         foreach ($statement->fields as $field) {
             if (!empty($field->name) && !empty($field->type)) {
                 if (!empty($this->columnBlueprints[$field->type->name])) {
                     $this->upDefinition->append($this->columnBlueprints[$field->type->name]($field->name, $field->type->parameters));
-                    $this->upDefinition->increaseIdentation();
+                    $this->upDefinition->increaseIndentation();
 
                     $options = array_merge($field->type->options->options, $field->options->options);
 
@@ -297,7 +297,7 @@ class MigrationDefinitionWriter {
                     }
 
                     $this->upDefinition->append(';', false, false);
-                    $this->upDefinition->decreaseIdentation();
+                    $this->upDefinition->decreaseIndentation();
                 }
             }
             if (!empty($field->key)) {
@@ -326,7 +326,7 @@ class MigrationDefinitionWriter {
                     }
 
                     if (!empty($field->references)) {
-                        $this->upDefinition->increaseIdentation();
+                        $this->upDefinition->increaseIndentation();
 
                         if (!empty($field->references->columns)) {
                             if (count($field->references->columns) == 1) {
@@ -349,7 +349,7 @@ class MigrationDefinitionWriter {
                             }
                         }
 
-                        $this->upDefinition->decreaseIdentation();
+                        $this->upDefinition->decreaseIndentation();
                     }
 
                     $this->upDefinition->append(';', false, false);
@@ -357,14 +357,14 @@ class MigrationDefinitionWriter {
             }
         }
 
-        $this->upDefinition->decreaseIdentation();
+        $this->upDefinition->decreaseIndentation();
         $this->upDefinition->append('});');
     }
 
     public function handleAlterTableStatement(AlterStatement $statement) {
         $tableName = $statement->table->table;
         $this->upDefinition->append("Schema::table('$tableName', function (Blueprint \$table) {", false);
-        $this->upDefinition->increaseIdentation();
+        $this->upDefinition->increaseIndentation();
 
         foreach ($statement->altered as $alterOperation) {
             if (!array_diff($alterOperation->options->options, ['ADD', 'COLUMN'])) {
@@ -382,11 +382,11 @@ class MigrationDefinitionWriter {
                 }
 
                 $this->upDefinition->append(';', false, false);
-                $this->upDefinition->decreaseIdentation();
+                $this->upDefinition->decreaseIndentation();
             }
         }
 
-        $this->upDefinition->decreaseIdentation();
+        $this->upDefinition->decreaseIndentation();
         $this->upDefinition->append('});');
     }
 

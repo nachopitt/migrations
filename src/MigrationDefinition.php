@@ -18,11 +18,11 @@ class MigrationDefinition {
         $this->indentation = $indentation;
     }
 
-    public function increaseIdentation($indentation = 1) {
+    public function increaseIndentation($indentation = 1) {
         $this->indentation += $indentation;
     }
 
-    public function decreaseIdentation($indentation = 1) {
+    public function decreaseIndentation($indentation = 1) {
         $this->indentation -= $indentation;
     }
 
