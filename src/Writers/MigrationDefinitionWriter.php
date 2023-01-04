@@ -353,16 +353,37 @@ class MigrationDefinitionWriter {
 
         foreach ($statement->altered as $alterOperation) {
             if (!array_diff($alterOperation->options->options, ['ADD', 'COLUMN'])) {
-                $tokens = array_column($alterOperation->unknown, 'value');
+                $tokens = array_diff(array_column($alterOperation->unknown, 'value'), [' ']);
+                $keys = array_keys($tokens);
 
-                foreach ($this->allowedDataTypes as $allowedDataType) {
-                    if (in_array($allowedDataType, $tokens)) {
+                foreach ($keys as $key => $tokenKey) {
+                    $token = $tokens[$tokenKey];
+
+                    if (in_array($token, $this->allowedDataTypes)) {
                         $parameters = [];
                         $parametersKeys = array_keys(array_intersect($tokens, ['(', ')']));
+
                         if (!empty($parametersKeys)) {
                             $parameters = array_diff(array_slice($tokens, $parametersKeys[0] + 1, $parametersKeys[1] - $parametersKeys[0] - 1), [',']);
                         }
-                        $this->upDefinition->append($this->columnBlueprints[$allowedDataType]($alterOperation->field->column, $parameters));
+
+                        $this->upDefinition->append($this->columnBlueprints[$token]($alterOperation->field->column, $parameters));
+                        $this->upDefinition->increaseIndentation();
+                    }
+                    else if (array_key_exists($token, $this->columnModifierBlueprints['whitelist'])) {
+                        $optionValue = null;
+
+                        if ($token == 'AFTER') {
+                            $optionValue = $tokens[$keys[$key + 1]];
+                        }
+
+                        $this->upDefinition->append($this->columnModifierBlueprints['whitelist'][$token]($optionValue));
+                    }
+                }
+
+                foreach ($this->columnModifierBlueprints['blacklist'] as $blacklistOptionName => $blacklistOptionBlueprint) {
+                    if (!in_array($blacklistOptionName, $tokens)) {
+                        $this->upDefinition->append($blacklistOptionBlueprint());
                     }
                 }
 
