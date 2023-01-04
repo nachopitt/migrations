@@ -294,7 +294,7 @@ class MigrationDefinitionWriter {
                 if ($field->key->type === 'PRIMARY KEY') {
                 }
 
-                if ($field->key->type  === 'KEY') {
+                if ($field->key->type === 'INDEX') {
                     if (count($field->key->columns) == 1) {
                         $this->upDefinition->append(sprintf("\$table->index('%s', '%s')", $field->key->columns[0]['name'], $field->key->name));
                     }
