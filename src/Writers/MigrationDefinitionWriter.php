@@ -377,11 +377,11 @@ class MigrationDefinitionWriter {
                         else if (array_key_exists($token, $this->columnModifierBlueprints['whitelist'])) {
                             $optionValue = null;
 
-                            if ($token == 'AFTER') {
-                                $optionValue = $tokens[$keys[$key + 1]];
-                            }
-                            else if ($token == 'DEFAULT') {
-                                $optionValue = $tokens[$keys[$key + 1]];
+                            switch ($token) {
+                                case 'AFTER':
+                                case 'DEFAULT':
+                                    $optionValue = $tokens[$keys[$key + 1]];
+                                    break;
                             }
 
                             $this->upDefinition->append($this->columnModifierBlueprints['whitelist'][$token]($optionValue));
