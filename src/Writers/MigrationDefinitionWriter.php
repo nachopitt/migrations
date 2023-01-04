@@ -369,12 +369,7 @@ class MigrationDefinitionWriter {
                         $token = $tokens[$tokenKey];
 
                         if (in_array(Str::upper($token), $this->allowedDataTypes)) {
-                            $parameters = [];
-                            $parametersKeys = array_keys(array_intersect($tokens, ['(', ')']));
-
-                            if (!empty($parametersKeys)) {
-                                $parameters = array_diff(array_slice($tokens, $parametersKeys[0] + 1, $parametersKeys[1] - $parametersKeys[0] - 1), [',']);
-                            }
+                            $parameters = $this->getParameters($tokens);
 
                             $this->upDefinition->append($this->columnBlueprints[Str::upper($token)]($alterOperation->field->column, $parameters));
                             $this->upDefinition->increaseIndentation();
@@ -411,6 +406,17 @@ class MigrationDefinitionWriter {
 
         $this->upDefinition->decreaseIndentation();
         $this->upDefinition->append('});');
+    }
+
+    protected function getParameters($tokens, $from = 0) {
+        $parameters = [];
+        $parametersKeys = array_keys(array_intersect($from === 0 ? $tokens : array_slice($tokens, $from), ['(', ')']));
+
+        if (!empty($parametersKeys)) {
+            $parameters = array_diff(array_slice($tokens, $parametersKeys[0] + 1, $parametersKeys[1] - $parametersKeys[0] - 1), [',']);
+        }
+
+        return $parameters;
     }
 
     protected function getAlterOperationType($options) {
