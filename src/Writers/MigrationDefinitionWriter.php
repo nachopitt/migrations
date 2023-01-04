@@ -276,22 +276,7 @@ class MigrationDefinitionWriter {
                     }
 
                     foreach ($this->columnModifierBlueprints['blacklist'] as $blacklistOptionName => $blacklistOptionBlueprint) {
-                        $present = false;
-
-                        foreach ($options as $option) {
-                            $optionName = $option;
-
-                            if (is_array($option)) {
-                                $optionName = $option['name'];
-                            }
-
-                            if ($optionName === $blacklistOptionName) {
-                                $present = true;
-                                break;
-                            }
-                        }
-
-                        if (!$present) {
+                        if (!in_array($blacklistOptionName, $options)) {
                             $this->upDefinition->append($blacklistOptionBlueprint());
                         }
                     }
