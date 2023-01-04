@@ -203,7 +203,7 @@ class MigrationDefinitionWriter {
                 },
             ],
             'blacklist' => [
-                'NOT NULL' => function ($optionValue) {
+                'NOT NULL' => function () {
                     return "->nullable()";
                 },
             ]
@@ -251,48 +251,48 @@ class MigrationDefinitionWriter {
                     $this->upDefinition->increaseIdentation();
 
                     $options = array_merge($field->type->options->options, $field->options->options);
-                    foreach ($this->columnModifierBlueprints['whitelist'] as $whitelistOptionName => $whitelistOption) {
-                        $found = false;
+
+                    foreach ($this->columnModifierBlueprints['whitelist'] as $whitelistOptionName => $whitelistOptionBlueprint) {
+                        $present = false;
+                        $optionValue = null;
+
                         foreach ($options as $option) {
+                            $optionName = $option;
+
                             if (is_array($option)) {
                                 $optionName = $option['name'];
                                 $optionValue = $option['value'];
                             }
-                            else {
-                                $optionName = $option;
-                                $optionValue = null;
-                            }
 
                             if ($optionName === $whitelistOptionName) {
-                                $found = true;
+                                $present = true;
                                 break;
                             }
                         }
 
-                        if ($found) {
-                            $this->upDefinition->append($whitelistOption($optionValue));
+                        if ($present) {
+                            $this->upDefinition->append($whitelistOptionBlueprint($optionValue));
                         }
                     }
 
-                    foreach ($this->columnModifierBlueprints['blacklist'] as $blacklistOptionName => $blacklistOption) {
-                        $found = false;
+                    foreach ($this->columnModifierBlueprints['blacklist'] as $blacklistOptionName => $blacklistOptionBlueprint) {
+                        $present = false;
+
                         foreach ($options as $option) {
+                            $optionName = $option;
+
                             if (is_array($option)) {
                                 $optionName = $option['name'];
-                                $optionValue = $option['value'];
-                            }
-                            else {
-                                $optionName = $option;
-                                $optionValue = null;
                             }
 
                             if ($optionName === $blacklistOptionName) {
-                                $found = true;
+                                $present = true;
+                                break;
                             }
                         }
 
-                        if (!$found) {
-                            $this->upDefinition->append($blacklistOption($optionValue));
+                        if (!$present) {
+                            $this->upDefinition->append($blacklistOptionBlueprint());
                         }
                     }
 
