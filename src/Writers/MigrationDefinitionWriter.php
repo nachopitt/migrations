@@ -347,7 +347,6 @@ class MigrationDefinitionWriter {
                     $tokens = array_values(array_diff(array_column($alterOperation->unknown, 'value'), [' ']));
 
                     foreach ($tokens as $tokenKey => $token) {
-
                         if (in_array(Str::upper($token), $this->allowedDataTypes)) {
                             $parameters = $this->getParameters($tokens);
 
@@ -358,8 +357,8 @@ class MigrationDefinitionWriter {
                             $optionValue = null;
 
                             switch ($token) {
-                                case 'AFTER':
                                 case 'DEFAULT':
+                                case 'AFTER':
                                     $optionValue = $tokens[$tokenKey + 1];
                                     break;
                             }
