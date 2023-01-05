@@ -309,7 +309,7 @@ class MigrationDefinitionWriter {
                             $this->upDefinition->append($this->referencesBlueprint($field->references->columns));
                         }
 
-                        if (!empty($field->references->columns)) {
+                        if (!empty($field->references->table->table)) {
                             $this->upDefinition->append($this->onBlueprint($field->references->table->table));
                         }
 
