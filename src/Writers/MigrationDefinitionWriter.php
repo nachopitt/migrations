@@ -386,8 +386,8 @@ class MigrationDefinitionWriter {
                 case MigrationDefinitionWriter::ALTER_OPERATION_ADD_KEY:
                     $tokens = array_diff(array_column($alterOperation->unknown, 'value'), [' ']);
 
-                    $references = $this->getParameters($tokens);
-                    $this->upDefinition->append($this->keyBlueprint('index', $references, $alterOperation->field->column));
+                    $fields = $this->getParameters($tokens);
+                    $this->upDefinition->append($this->keyBlueprint('index', $fields, $alterOperation->field->column));
                     $this->upDefinition->append(';', false, false);
                     break;
             }
