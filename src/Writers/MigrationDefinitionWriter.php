@@ -458,6 +458,9 @@ class MigrationDefinitionWriter {
             else if (!array_diff($options, ['ADD', 'CONSTRAINT'])) {
                 return MigrationDefinitionWriter::ALTER_OPERATION_ADD_CONSTRAINT;
             }
+            else {
+                return false;
+            }
         }
         else {
             return false;
