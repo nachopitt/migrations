@@ -401,7 +401,8 @@ class MigrationDefinitionWriter {
                             $references = $this->getParameters(array_slice($tokens, $tokenKey + 1));
                             $this->upDefinition->append($this->referencesBlueprint($references));
                         }
-                        else if ($token == 'ON') {
+                        else if (array_key_exists($token, $this->referencesOptionBlueprints)) {
+                            $this->upDefinition->append($this->referencesOptionBlueprints[$token]($tokens[$tokenKey + 1]));
                         }
                     }
 
