@@ -425,6 +425,9 @@ class MigrationDefinitionWriter {
             else if (!array_diff($options, ['ADD', 'KEY'])) {
                 return MigrationDefinitionWriter::ALTER_OPERATION_ADD_KEY;
             }
+            else if (!array_diff($options, ['ADD', 'INDEX'])) {
+                return MigrationDefinitionWriter::ALTER_OPERATION_ADD_KEY;
+            }
             else if (!array_diff($options, ['ADD', 'CONSTRAINT'])) {
                 return MigrationDefinitionWriter::ALTER_OPERATION_ADD_CONSTRAINT;
             }
