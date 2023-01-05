@@ -22,6 +22,7 @@ class MigrationDefinitionWriter {
     protected const ALTER_OPERATION_CHANGE_COLUMN   = 1;
     protected const ALTER_OPERATION_ADD_KEY         = 2;
     protected const ALTER_OPERATION_ADD_CONSTRAINT  = 3;
+    protected const ALTER_OPERATION_DROP_COLUMN     = 4;
 
     public function __construct()
     {
@@ -417,6 +418,10 @@ class MigrationDefinitionWriter {
                     $this->upDefinition->append(';', false, false);
                     $this->upDefinition->decreaseIndentation();
                     break;
+                case MigrationDefinitionWriter::ALTER_OPERATION_DROP_COLUMN:
+                    $this->upDefinition->append($this->dropColumnsBlueprint($alterOperation->field->column));
+                    $this->upDefinition->append(';', false, false);
+                    break;
             }
         }
 
@@ -457,6 +462,12 @@ class MigrationDefinitionWriter {
             }
             else if (!array_diff($options, ['ADD', 'CONSTRAINT'])) {
                 return MigrationDefinitionWriter::ALTER_OPERATION_ADD_CONSTRAINT;
+            }
+            else if (!array_diff($options, ['DROP'])) {
+                return MigrationDefinitionWriter::ALTER_OPERATION_DROP_COLUMN;
+            }
+            else if (!array_diff($options, ['DROP', 'COLUMN'])) {
+                return MigrationDefinitionWriter::ALTER_OPERATION_DROP_COLUMN;
             }
             else {
                 return false;
@@ -524,6 +535,10 @@ class MigrationDefinitionWriter {
         }
 
         return false;
+    }
+
+    protected function dropColumnsBlueprint($fields) {
+        return "\$table" . $this->genericBlueprint('drop', $fields);
     }
 
     protected function onBlueprint($tableName) {
