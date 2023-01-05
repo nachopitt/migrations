@@ -357,6 +357,8 @@ class MigrationDefinitionWriter {
                             $optionValue = null;
 
                             switch ($token) {
+                                case 'CHARACTER SET':
+                                case 'COLLATE':
                                 case 'DEFAULT':
                                 case 'AFTER':
                                     $optionValue = $tokens[$tokenKey + 1];
