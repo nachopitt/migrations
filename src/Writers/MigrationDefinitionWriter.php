@@ -379,6 +379,13 @@ class MigrationDefinitionWriter {
 
                     $this->upDefinition->append(';', false, false);
                     $this->upDefinition->decreaseIndentation();
+
+                    if ($alterOperationType === MigrationDefinitionWriter::ALTER_OPERATION_CHANGE_COLUMN) {
+                        if ($alterOperation->field->column !== $tokens[0]) {
+                            $this->upDefinition->append($this->renameColumnBlueprint($alterOperation->field->column, $tokens[0]));
+                            $this->upDefinition->append(';', false, false);
+                        }
+                    }
                     break;
                 case MigrationDefinitionWriter::ALTER_OPERATION_ADD_KEY:
                     $tokens = array_values(array_diff(array_column($alterOperation->unknown, 'value'), [' ']));
@@ -514,6 +521,10 @@ class MigrationDefinitionWriter {
 
     protected function changeBlueprint() {
         return '->change()';
+    }
+
+    protected function renameColumnBlueprint($oldName, $newName) {
+        return sprintf("\$table->rename('%s', '%s')", $oldName, $newName);
     }
 
     public function getUpDefinition() {
