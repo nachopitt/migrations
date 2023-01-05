@@ -3,9 +3,15 @@
     "homepage": "https://github.com/nachopitt/migrations",
     "keywords": ["database","sql","mysql","laravel","migration"],
     "license": "MIT",
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/nachopitt/sql-parser"
+        }
+    ],
     "require": {
         "laravel/framework": "^9.42",
-        "phpmyadmin/sql-parser": "^5.5"
+        "phpmyadmin/sql-parser": "dev-master"
     },
     "autoload": {
         "psr-4": {
