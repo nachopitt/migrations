@@ -306,7 +306,7 @@ class MigrationDefinitionWriter {
                         $this->upDefinition->increaseIndentation();
 
                         if (!empty($field->references->columns)) {
-                            $this->upDefinition->append($this->referencesBlueprint($field->references->columns));
+                            $this->upDefinition->append($this->genericBlueprint('references', $field->references->columns));
                         }
 
                         if (!empty($field->references->table->table)) {
@@ -407,7 +407,7 @@ class MigrationDefinitionWriter {
                         }
                         else if ($token == 'REFERENCES') {
                             $references = $this->getParameters(array_slice($tokens, $tokenKey + 1));
-                            $this->upDefinition->append($this->referencesBlueprint($references));
+                            $this->upDefinition->append($this->genericBlueprint('references', $references));
                         }
                         else if (array_key_exists($token, $this->referencesOptionBlueprints)) {
                             $this->upDefinition->append($this->referencesOptionBlueprints[$token]($tokens[$tokenKey + 1]));
@@ -500,21 +500,27 @@ class MigrationDefinitionWriter {
         return false;
     }
 
-    protected function referencesBlueprint($fieldNames) {
-        if (is_array($fieldNames) && count($fieldNames) > 1) {
-            return sprintf("->references(['%s'])", implode("', '", $fieldNames));
-        }
-        else {
-            $fieldName = '';
-            if (is_string($fieldNames)) {
-                $fieldName = $fieldNames;
-            }
-            else if (count($fieldNames) === 1) {
-                $fieldName = $fieldNames[0];
-            }
+    protected function genericBlueprint($blueprint, $parameters) {
+        $types = ['references', 'drop'];
 
-            return sprintf("->references('%s')", $fieldName);
+        if (in_array($blueprint, $types)) {
+            if (is_array($parameters) && count($parameters) > 1) {
+                return sprintf("->%s(['%s'])", $blueprint, implode("', '", $parameters));
+            }
+            else {
+                $parameter = '';
+                if (is_string($parameters)) {
+                    $parameter = $parameters;
+                }
+                else if (count($parameters) === 1) {
+                    $parameter = $parameters[0];
+                }
+
+                return sprintf("->%s('%s')", $blueprint, $parameter);
+            }
         }
+
+        return false;
     }
 
     protected function onBlueprint($tableName) {
