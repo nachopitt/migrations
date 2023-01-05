@@ -344,11 +344,9 @@ class MigrationDefinitionWriter {
             switch ($alterOperationType) {
                 case MigrationDefinitionWriter::ALTER_OPERATION_ADD_COLUMN:
                 case MigrationDefinitionWriter::ALTER_OPERATION_CHANGE_COLUMN:
-                    $tokens = array_diff(array_column($alterOperation->unknown, 'value'), [' ']);
-                    $keys = array_keys($tokens);
+                    $tokens = array_values(array_diff(array_column($alterOperation->unknown, 'value'), [' ']));
 
-                    foreach ($keys as $key => $tokenKey) {
-                        $token = $tokens[$tokenKey];
+                    foreach ($tokens as $tokenKey => $token) {
 
                         if (in_array(Str::upper($token), $this->allowedDataTypes)) {
                             $parameters = $this->getParameters($tokens);
@@ -362,7 +360,7 @@ class MigrationDefinitionWriter {
                             switch ($token) {
                                 case 'AFTER':
                                 case 'DEFAULT':
-                                    $optionValue = $tokens[$keys[$key + 1]];
+                                    $optionValue = $tokens[$tokenKey + 1];
                                     break;
                             }
 
@@ -384,7 +382,7 @@ class MigrationDefinitionWriter {
                     $this->upDefinition->decreaseIndentation();
                     break;
                 case MigrationDefinitionWriter::ALTER_OPERATION_ADD_KEY:
-                    $tokens = array_diff(array_column($alterOperation->unknown, 'value'), [' ']);
+                    $tokens = array_values(array_diff(array_column($alterOperation->unknown, 'value'), [' ']));
 
                     $fields = $this->getParameters($tokens);
                     $this->upDefinition->append($this->keyBlueprint('index', $fields, $alterOperation->field->column));
@@ -397,12 +395,12 @@ class MigrationDefinitionWriter {
         $this->upDefinition->append('});');
     }
 
-    protected function getParameters($tokens, $from = 0) {
+    protected function getParameters($tokens) {
         $parameters = [];
-        $parametersKeys = array_keys(array_intersect($from === 0 ? $tokens : array_slice($tokens, $from), ['(', ')']));
+        $keys = array_keys(array_intersect($tokens, ['(', ')']));
 
-        if (!empty($parametersKeys)) {
-            $parameters = array_diff(array_slice($tokens, $parametersKeys[0] + 1, $parametersKeys[1] - $parametersKeys[0] - 1), [',']);
+        if (!empty($keys)) {
+            $parameters = array_diff(array_slice($tokens, $keys[0] + 1, $keys[1] - $keys[0] - 1), [',']);
         }
 
         return $parameters;
