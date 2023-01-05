@@ -388,6 +388,26 @@ class MigrationDefinitionWriter {
                     $this->upDefinition->append($this->keyBlueprint('index', $fields, $alterOperation->field->column));
                     $this->upDefinition->append(';', false, false);
                     break;
+                case MigrationDefinitionWriter::ALTER_OPERATION_ADD_CONSTRAINT:
+                    $tokens = array_values(array_diff(array_column($alterOperation->unknown, 'value'), [' ']));
+
+                    foreach ($tokens as $tokenKey => $token) {
+                        if ($token == 'FOREIGN KEY') {
+                            $fields = $this->getParameters(array_slice($tokens, $tokenKey + 1));
+                            $this->upDefinition->append($this->keyBlueprint('foreign', $fields, $alterOperation->field->column));
+                            $this->upDefinition->increaseIndentation();
+                        }
+                        else if ($token == 'REFERENCES') {
+                            $references = $this->getParameters(array_slice($tokens, $tokenKey + 1));
+                            $this->upDefinition->append($this->referencesBlueprint($references));
+                        }
+                        else if ($token == 'ON') {
+                        }
+                    }
+
+                    $this->upDefinition->append(';', false, false);
+                    $this->upDefinition->decreaseIndentation();
+                    break;
             }
         }
 
