@@ -439,11 +439,11 @@ class MigrationDefinitionWriter {
                     }
 
                     break;
-                    case MigrationDefinitionWriter::ALTER_OPERATION_DROP_INDEX:
-                        $this->upDefinition->append($this->dropIndexesBlueprint($alterOperation->field->column));
-                        $this->upDefinition->append(';', false, false);
+                case MigrationDefinitionWriter::ALTER_OPERATION_DROP_INDEX:
+                    $this->upDefinition->append($this->dropIndexesBlueprint($alterOperation->field->column));
+                    $this->upDefinition->append(';', false, false);
 
-                        break;
+                    break;
             }
         }
 
