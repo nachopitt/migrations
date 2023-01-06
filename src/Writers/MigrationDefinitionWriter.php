@@ -533,7 +533,7 @@ class MigrationDefinitionWriter {
     }
 
     protected function genericBlueprint($blueprint, $parameters) {
-        $blueprints = ['references', 'drop'];
+        $blueprints = ['references', 'dropColumn'];
 
         if (in_array($blueprint, $blueprints)) {
             if (is_array($parameters) && count($parameters) > 1) {
@@ -556,7 +556,7 @@ class MigrationDefinitionWriter {
     }
 
     protected function dropColumnsBlueprint($fields) {
-        return "\$table" . $this->genericBlueprint('drop', $fields);
+        return "\$table" . $this->genericBlueprint('dropColumn', $fields);
     }
 
     protected function onBlueprint($tableName) {
