@@ -385,10 +385,11 @@ class MigrationDefinitionWriter {
 
                     if ($alterOperationType === MigrationDefinitionWriter::ALTER_OPERATION_CHANGE_COLUMN) {
                         if ($alterOperation->field->column !== $tokens[0]) {
-                            $this->upDefinition->append($this->renameColumnBlueprint($alterOperation->field->column, $tokens[0]));
+                            $this->upDefinition->append($this->renameBlueprint('column', $alterOperation->field->column, $tokens[0]));
                             $this->upDefinition->append(';', false, false);
                         }
                     }
+
                     break;
                 case MigrationDefinitionWriter::ALTER_OPERATION_ADD_KEY:
                     $tokens = array_values(array_diff(array_column($alterOperation->unknown, 'value'), [' ']));
@@ -396,6 +397,7 @@ class MigrationDefinitionWriter {
                     $fields = $this->getParameters($tokens);
                     $this->upDefinition->append($this->keyBlueprint('index', $fields, $alterOperation->field->column));
                     $this->upDefinition->append(';', false, false);
+
                     break;
                 case MigrationDefinitionWriter::ALTER_OPERATION_ADD_CONSTRAINT:
                     $tokens = array_values(array_diff(array_column($alterOperation->unknown, 'value'), [' ']));
@@ -417,10 +419,12 @@ class MigrationDefinitionWriter {
 
                     $this->upDefinition->append(';', false, false);
                     $this->upDefinition->decreaseIndentation();
+
                     break;
                 case MigrationDefinitionWriter::ALTER_OPERATION_DROP_COLUMN:
                     $this->upDefinition->append($this->dropColumnsBlueprint($alterOperation->field->column));
                     $this->upDefinition->append(';', false, false);
+
                     break;
             }
         }
@@ -515,9 +519,9 @@ class MigrationDefinitionWriter {
     }
 
     protected function genericBlueprint($blueprint, $parameters) {
-        $types = ['references', 'drop'];
+        $blueprints = ['references', 'drop'];
 
-        if (in_array($blueprint, $types)) {
+        if (in_array($blueprint, $blueprints)) {
             if (is_array($parameters) && count($parameters) > 1) {
                 return sprintf("->%s(['%s'])", $blueprint, implode("', '", $parameters));
             }
@@ -549,8 +553,13 @@ class MigrationDefinitionWriter {
         return '->change()';
     }
 
-    protected function renameColumnBlueprint($oldName, $newName) {
-        return sprintf("\$table->rename('%s', '%s')", $oldName, $newName);
+    protected function renameBlueprint($blueprint, $oldName, $newName) {
+        $blueprints = ['column', 'index'];
+        if (in_array($blueprint, $blueprints)) {
+            return sprintf("\$table->rename%s('%s', '%s')", Str::ucfirst($blueprint), $oldName, $newName);
+        }
+
+        return false;
     }
 
     public function getUpDefinition() {
