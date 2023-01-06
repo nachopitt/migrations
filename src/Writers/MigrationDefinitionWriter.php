@@ -23,6 +23,7 @@ class MigrationDefinitionWriter {
     protected const ALTER_OPERATION_ADD_KEY         = 2;
     protected const ALTER_OPERATION_ADD_CONSTRAINT  = 3;
     protected const ALTER_OPERATION_DROP_COLUMN     = 4;
+    protected const ALTER_OPERATION_RENAME_INDEX    = 5;
 
     public function __construct()
     {
@@ -424,6 +425,16 @@ class MigrationDefinitionWriter {
                 case MigrationDefinitionWriter::ALTER_OPERATION_DROP_COLUMN:
                     $this->upDefinition->append($this->dropColumnsBlueprint($alterOperation->field->column));
                     $this->upDefinition->append(';', false, false);
+                    break;
+                case MigrationDefinitionWriter::ALTER_OPERATION_RENAME_INDEX:
+                    $tokens = array_values(array_diff(array_column($alterOperation->unknown, 'value'), [' ']));
+
+                    foreach ($tokens as $tokenKey => $token) {
+                        if ($token === 'TO') {
+                            $this->upDefinition->append($this->renameBlueprint('index', $alterOperation->field->column, $tokens[$tokenKey + 1]));
+                            $this->upDefinition->append(';', false, false);
+                        }
+                    }
 
                     break;
             }
@@ -472,6 +483,9 @@ class MigrationDefinitionWriter {
             }
             else if (!array_diff($options, ['DROP', 'COLUMN'])) {
                 return MigrationDefinitionWriter::ALTER_OPERATION_DROP_COLUMN;
+            }
+            else if (!array_diff($options, ['RENAME', 'INDEX'])) {
+                return MigrationDefinitionWriter::ALTER_OPERATION_RENAME_INDEX;
             }
             else {
                 return false;
