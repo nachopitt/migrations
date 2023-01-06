@@ -543,7 +543,7 @@ class MigrationDefinitionWriter {
     }
 
     protected function genericBlueprint($blueprint, $parameters) {
-        $blueprints = ['references', 'dropColumn'];
+        $blueprints = ['references', 'dropColumn', 'dropIndex'];
 
         if (in_array($blueprint, $blueprints)) {
             if (is_array($parameters) && count($parameters) > 1) {
