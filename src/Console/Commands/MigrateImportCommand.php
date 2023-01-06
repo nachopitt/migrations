@@ -58,6 +58,7 @@ class MigrateImportCommand extends MigrateMakeCommand
 
         $createDefinitions = [];
         $alterDefinitions = [];
+        $dropDefinitions = [];
 
         foreach($parser->statements as $statement) {
             if ($statement instanceof CreateStatement && in_array('TABLE', $statement->options->options)) {
@@ -96,8 +97,21 @@ class MigrateImportCommand extends MigrateMakeCommand
 
                 $migrationWriter->reset();
             }
-            else if ($statement instanceof DropStatement) {
-                
+            else if ($statement instanceof DropStatement && in_array('TABLE', $statement->options->options)) {
+                $migrationWriter->handleDropTableStatement($statement);
+
+                if (!$squash) {
+                    $this->creator->setUpDefinition($migrationWriter->getUpDefinition());
+                    $this->creator->setDownDefinition($migrationWriter->getDownDefinition());
+
+                    $this->writeMigration(sprintf('delete_%s_table', $statement->fields[0]->table), $statement->fields[0]->table, true);
+                }
+                else {
+                    $dropDefinitions[] = [
+                        'up' => $migrationWriter->getUpDefinition(),
+                        'down' => $migrationWriter->getDownDefinition()
+                    ];
+                }
             }
         }
 
@@ -119,6 +133,16 @@ class MigrateImportCommand extends MigrateMakeCommand
             $this->creator->setDownDefinition($downDefinition);
 
             $this->writeMigration(sprintf('update_%s_database', $schemaName), $schemaName, true);
+        }
+
+        if (!empty($dropDefinitions)) {
+            $upDefinition = implode("\n\n", array_column($dropDefinitions, 'up'));
+            $downDefinition = implode("\n\n", array_column($dropDefinitions, 'down'));
+
+            $this->creator->setUpDefinition($upDefinition);
+            $this->creator->setDownDefinition($downDefinition);
+
+            $this->writeMigration(sprintf('delete_%s_database', $schemaName), $schemaName, true);
         }
 
         $this->composer->dumpAutoloads();

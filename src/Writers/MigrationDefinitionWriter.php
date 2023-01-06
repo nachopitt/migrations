@@ -6,6 +6,7 @@ use Illuminate\Support\Str;
 use Nachopitt\Migrations\MigrationDefinition;
 use PhpMyAdmin\SqlParser\Statements\AlterStatement;
 use PhpMyAdmin\SqlParser\Statements\CreateStatement;
+use PhpMyAdmin\SqlParser\Statements\DropStatement;
 use PhpMyAdmin\SqlParser\Token;
 
 class MigrationDefinitionWriter {
@@ -458,6 +459,17 @@ class MigrationDefinitionWriter {
 
         $this->upDefinition->decreaseIndentation();
         $this->upDefinition->append('});');
+    }
+
+    public function handleDropTableStatement(DropStatement $statement) {
+        var_dump($statement);
+        $tables = array_column($statement->fields, 'table');
+
+        $newLine = false;
+        foreach($tables as $table) {
+            $this->upDefinition->append($this->dropTableBlueprint($table), $newLine);
+            $newLine = true;
+        }
     }
 
     protected function getParameters($tokens) {
