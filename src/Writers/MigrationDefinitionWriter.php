@@ -411,8 +411,9 @@ class MigrationDefinitionWriter {
                             $this->upDefinition->increaseIndentation();
                         }
                         else if ($token == 'REFERENCES') {
-                            $references = $this->getParameters(array_slice($tokens, $tokenKey + 1));
+                            $references = $this->getParameters(array_slice($tokens, $tokenKey + 2));
                             $this->upDefinition->append($this->genericBlueprint('references', $references));
+                            $this->upDefinition->append($this->onBlueprint($tokens[$tokenKey + 1]), false, false);
                         }
                         else if (array_key_exists($token, $this->referencesOptionBlueprints)) {
                             $this->upDefinition->append($this->referencesOptionBlueprints[$token]($tokens[$tokenKey + 1]));
