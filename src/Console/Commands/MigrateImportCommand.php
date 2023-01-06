@@ -78,7 +78,7 @@ class MigrateImportCommand extends MigrateMakeCommand
 
                 $migrationWriter->reset();
             }
-            else if ($statement instanceof AlterStatement) {
+            else if ($statement instanceof AlterStatement && in_array('TABLE', $statement->options->options)) {
                 $migrationWriter->handleAlterTableStatement($statement);
 
                 if (!$squash) {
