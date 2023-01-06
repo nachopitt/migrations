@@ -424,8 +424,16 @@ class MigrationDefinitionWriter {
 
                     break;
                 case MigrationDefinitionWriter::ALTER_OPERATION_DROP_COLUMN:
-                    $this->upDefinition->append($this->dropColumnsBlueprint($alterOperation->field->column));
-                    $this->upDefinition->append(';', false, false);
+                    $tokens = array_values(array_diff(array_column($alterOperation->unknown, 'value'), [' ']));
+
+                    if ($tokens[0] === 'FOREIGN KEY') {
+                        $this->upDefinition->append($this->dropForeignKeysBlueprint($tokens[1]));
+                        $this->upDefinition->append(';', false, false);
+                    }
+                    else {
+                        $this->upDefinition->append($this->dropColumnsBlueprint($alterOperation->field->column));
+                        $this->upDefinition->append(';', false, false);
+                    }
 
                     break;
                 case MigrationDefinitionWriter::ALTER_OPERATION_RENAME_INDEX:
@@ -543,7 +551,7 @@ class MigrationDefinitionWriter {
     }
 
     protected function genericBlueprint($blueprint, $parameters) {
-        $blueprints = ['references', 'dropColumn', 'dropIndex'];
+        $blueprints = ['references', 'dropColumn', 'dropIndex', 'dropForeign'];
 
         if (in_array($blueprint, $blueprints)) {
             if (is_array($parameters) && count($parameters) > 1) {
@@ -571,6 +579,10 @@ class MigrationDefinitionWriter {
 
     protected function dropIndexesBlueprint($fields) {
         return "\$table" . $this->genericBlueprint('dropIndex', $fields);
+    }
+
+    protected function dropForeignKeysBlueprint($fields) {
+        return "\$table" . $this->genericBlueprint('dropForeign', $fields);
     }
 
     protected function onBlueprint($tableName) {
