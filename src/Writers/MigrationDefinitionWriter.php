@@ -24,6 +24,7 @@ class MigrationDefinitionWriter {
     protected const ALTER_OPERATION_ADD_CONSTRAINT  = 3;
     protected const ALTER_OPERATION_DROP_COLUMN     = 4;
     protected const ALTER_OPERATION_RENAME_INDEX    = 5;
+    protected const ALTER_OPERATION_DROP_INDEX      = 6;
 
     public function __construct()
     {
@@ -425,6 +426,7 @@ class MigrationDefinitionWriter {
                 case MigrationDefinitionWriter::ALTER_OPERATION_DROP_COLUMN:
                     $this->upDefinition->append($this->dropColumnsBlueprint($alterOperation->field->column));
                     $this->upDefinition->append(';', false, false);
+
                     break;
                 case MigrationDefinitionWriter::ALTER_OPERATION_RENAME_INDEX:
                     $tokens = array_values(array_diff(array_column($alterOperation->unknown, 'value'), [' ']));
@@ -437,6 +439,11 @@ class MigrationDefinitionWriter {
                     }
 
                     break;
+                    case MigrationDefinitionWriter::ALTER_OPERATION_DROP_INDEX:
+                        $this->upDefinition->append($this->dropIndexesBlueprint($alterOperation->field->column));
+                        $this->upDefinition->append(';', false, false);
+
+                        break;
             }
         }
 
@@ -486,6 +493,9 @@ class MigrationDefinitionWriter {
             }
             else if (!array_diff($options, ['RENAME', 'INDEX'])) {
                 return MigrationDefinitionWriter::ALTER_OPERATION_RENAME_INDEX;
+            }
+            else if (!array_diff($options, ['DROP', 'INDEX'])) {
+                return MigrationDefinitionWriter::ALTER_OPERATION_DROP_INDEX;
             }
             else {
                 return false;
@@ -557,6 +567,10 @@ class MigrationDefinitionWriter {
 
     protected function dropColumnsBlueprint($fields) {
         return "\$table" . $this->genericBlueprint('dropColumn', $fields);
+    }
+
+    protected function dropIndexesBlueprint($fields) {
+        return "\$table" . $this->genericBlueprint('dropIndex', $fields);
     }
 
     protected function onBlueprint($tableName) {
