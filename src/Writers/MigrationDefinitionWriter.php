@@ -404,7 +404,6 @@ class MigrationDefinitionWriter {
                         $this->downDefinition->append('// Revert manually CHANGE COLUMN ' . $alterOperation->field->column . ' alter operation to the previous definition.');
                     }
                     else {
-                        var_dump($alterOperation);
                         $this->downDefinition->append($this->dropBlueprint('column', $alterOperation->field->column));
                         $this->downDefinition->append(';', false, false);
                     }
@@ -696,8 +695,7 @@ class MigrationDefinitionWriter {
         return sprintf("Schema::rename('%s', '%s');", $oldName, $newName);
     }
 
-    protected function renameToBlueprint($newName)
-    {
+    protected function renameToBlueprint($newName) {
         return sprintf("\$table->rename('%s')", $newName);
     }
 

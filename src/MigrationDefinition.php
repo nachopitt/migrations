@@ -38,10 +38,6 @@ class MigrationDefinition {
         $this->definition .= $definition;
     }
 
-    public function newLine() {
-        $this->definition .= "\r";
-    }
-
     public function get() {
         return $this->definition;
     }
