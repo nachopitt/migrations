@@ -22,14 +22,13 @@ class MigrationDefinitionWriter {
 
     protected const ALTER_OPERATION_ADD_COLUMN      = 0;
     protected const ALTER_OPERATION_CHANGE_COLUMN   = 1;
-    protected const ALTER_OPERATION_ADD_KEY         = 2;
-    protected const ALTER_OPERATION_ADD_INDEX       = 3;
-    protected const ALTER_OPERATION_ADD_UNIQUE      = 4;
-    protected const ALTER_OPERATION_ADD_FULLTEXT    = 5;
-    protected const ALTER_OPERATION_ADD_CONSTRAINT  = 6;
-    protected const ALTER_OPERATION_DROP_COLUMN     = 7;
-    protected const ALTER_OPERATION_RENAME_INDEX    = 8;
-    protected const ALTER_OPERATION_DROP_INDEX      = 9;
+    protected const ALTER_OPERATION_ADD_INDEX       = 2;
+    protected const ALTER_OPERATION_ADD_UNIQUE      = 3;
+    protected const ALTER_OPERATION_ADD_FULLTEXT    = 4;
+    protected const ALTER_OPERATION_ADD_CONSTRAINT  = 5;
+    protected const ALTER_OPERATION_DROP_COLUMN     = 6;
+    protected const ALTER_OPERATION_RENAME_INDEX    = 7;
+    protected const ALTER_OPERATION_DROP_INDEX      = 8;
 
     public function __construct()
     {
@@ -347,13 +346,12 @@ class MigrationDefinitionWriter {
         $this->upDefinition->increaseIndentation();
 
         foreach ($statement->altered as $alterOperation) {
-            $alterOperationType = $this->getAlterOperationType($alterOperation->options->options, $alterOperation->unknown);
+            $tokens = array_values(array_diff(array_column($alterOperation->unknown, 'value'), [' ']));
+            $alterOperationType = $this->getAlterOperationType($alterOperation->options->options, $tokens);
 
             switch ($alterOperationType) {
                 case MigrationDefinitionWriter::ALTER_OPERATION_ADD_COLUMN:
                 case MigrationDefinitionWriter::ALTER_OPERATION_CHANGE_COLUMN:
-                    $tokens = array_values(array_diff(array_column($alterOperation->unknown, 'value'), [' ']));
-
                     foreach ($tokens as $tokenKey => $token) {
                         if (in_array(Str::upper($token), $this->allowedDataTypes)) {
                             $parameters = $this->getParameters($tokens);
@@ -398,12 +396,9 @@ class MigrationDefinitionWriter {
                     }
 
                     break;
-                case MigrationDefinitionWriter::ALTER_OPERATION_ADD_KEY:
                 case MigrationDefinitionWriter::ALTER_OPERATION_ADD_INDEX:
                 case MigrationDefinitionWriter::ALTER_OPERATION_ADD_UNIQUE:
                 case MigrationDefinitionWriter::ALTER_OPERATION_ADD_FULLTEXT:
-                    $tokens = array_values(array_diff(array_column($alterOperation->unknown, 'value'), [' ']));
-
                     $fields = $this->getParameters($tokens);
                     $keyBlueprintType = 'index';
                     if ($alterOperationType === MigrationDefinitionWriter::ALTER_OPERATION_ADD_UNIQUE) {
@@ -412,13 +407,11 @@ class MigrationDefinitionWriter {
                     else if ($alterOperationType === MigrationDefinitionWriter::ALTER_OPERATION_ADD_FULLTEXT) {
                         $keyBlueprintType = 'fullText';
                     }
-                    $this->upDefinition->append($this->keyBlueprint($keyBlueprintType, $fields, $alterOperation->field ? $alterOperation->field->column : end($tokens)));
+                    $this->upDefinition->append($this->keyBlueprint($keyBlueprintType, $fields, $alterOperation->field ? $alterOperation->field->column : $tokens[0]));
                     $this->upDefinition->append(';', false, false);
 
                     break;
                 case MigrationDefinitionWriter::ALTER_OPERATION_ADD_CONSTRAINT:
-                    $tokens = array_values(array_diff(array_column($alterOperation->unknown, 'value'), [' ']));
-
                     foreach ($tokens as $tokenKey => $token) {
                         if ($token == 'FOREIGN KEY') {
                             $fields = $this->getParameters(array_slice($tokens, $tokenKey + 1));
@@ -440,8 +433,6 @@ class MigrationDefinitionWriter {
 
                     break;
                 case MigrationDefinitionWriter::ALTER_OPERATION_DROP_COLUMN:
-                    $tokens = array_values(array_diff(array_column($alterOperation->unknown, 'value'), [' ']));
-
                     if ($tokens[0] === 'FOREIGN KEY') {
                         $this->upDefinition->append($this->dropForeignKeysBlueprint($tokens[1]));
                         $this->upDefinition->append(';', false, false);
@@ -453,8 +444,6 @@ class MigrationDefinitionWriter {
 
                     break;
                 case MigrationDefinitionWriter::ALTER_OPERATION_RENAME_INDEX:
-                    $tokens = array_values(array_diff(array_column($alterOperation->unknown, 'value'), [' ']));
-
                     foreach ($tokens as $tokenKey => $token) {
                         if ($token === 'TO') {
                             $this->upDefinition->append($this->renameBlueprint('index', $alterOperation->field->column, $tokens[$tokenKey + 1]));
@@ -496,11 +485,16 @@ class MigrationDefinitionWriter {
         return $parameters;
     }
 
-    protected function getAlterOperationType($options, $tokens) {
+    protected function getAlterOperationType($options, &$tokens) {
         if (is_array($options)) {
             if (!array_diff($options, ['ADD'])) {
-                if (reset($tokens)->value === 'UNIQUE') {
+                if ($tokens[0] === 'UNIQUE' || $tokens[0] === 'UNIQUE KEY') {
+                    array_shift($tokens);
                     return MigrationDefinitionWriter::ALTER_OPERATION_ADD_UNIQUE;
+                }
+                else if ($tokens[0] === 'FULLTEXT' || $tokens[0] === 'FULLTEXT KEY') {
+                    array_shift($tokens);
+                    return MigrationDefinitionWriter::ALTER_OPERATION_ADD_FULLTEXT;
                 }
                 return MigrationDefinitionWriter::ALTER_OPERATION_ADD_COLUMN;
             }
@@ -514,7 +508,7 @@ class MigrationDefinitionWriter {
                 return MigrationDefinitionWriter::ALTER_OPERATION_CHANGE_COLUMN;
             }
             else if (!array_diff($options, ['ADD', 'KEY'])) {
-                return MigrationDefinitionWriter::ALTER_OPERATION_ADD_KEY;
+                return MigrationDefinitionWriter::ALTER_OPERATION_ADD_INDEX;
             }
             else if (!array_diff($options, ['ADD', 'INDEX'])) {
                 return MigrationDefinitionWriter::ALTER_OPERATION_ADD_INDEX;
