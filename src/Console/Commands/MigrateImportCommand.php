@@ -112,6 +112,8 @@ class MigrateImportCommand extends MigrateMakeCommand
                         'down' => $migrationWriter->getDownDefinition()
                     ];
                 }
+
+                $migrationWriter->reset();
             }
         }
 
