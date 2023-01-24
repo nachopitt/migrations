@@ -118,8 +118,8 @@ class MigrateImportCommand extends MigrateMakeCommand
         }
 
         if (!empty($createDefinitions)) {
-            $upDefinition = implode("\n\n", array_column($createDefinitions, 'up'));
-            $downDefinition = implode("\n\n", array_column($createDefinitions, 'down'));
+            $upDefinition = implode("\n", array_column($createDefinitions, 'up'));
+            $downDefinition = implode("\n", array_column($createDefinitions, 'down'));
 
             $this->creator->setUpDefinition($upDefinition);
             $this->creator->setDownDefinition($downDefinition);
@@ -128,8 +128,8 @@ class MigrateImportCommand extends MigrateMakeCommand
         }
 
         if (!empty($alterDefinitions)) {
-            $upDefinition = implode("\n\n", array_column($alterDefinitions, 'up'));
-            $downDefinition = implode("\n\n", array_column($alterDefinitions, 'down'));
+            $upDefinition = implode("\n", array_column($alterDefinitions, 'up'));
+            $downDefinition = implode("\n", array_column($alterDefinitions, 'down'));
 
             $this->creator->setUpDefinition($upDefinition);
             $this->creator->setDownDefinition($downDefinition);
@@ -138,8 +138,8 @@ class MigrateImportCommand extends MigrateMakeCommand
         }
 
         if (!empty($dropDefinitions)) {
-            $upDefinition = implode("\n\n", array_column($dropDefinitions, 'up'));
-            $downDefinition = implode("\n\n", array_column($dropDefinitions, 'down'));
+            $upDefinition = implode("\n", array_column($dropDefinitions, 'up'));
+            $downDefinition = implode("\n", array_column($dropDefinitions, 'down'));
 
             $this->creator->setUpDefinition($upDefinition);
             $this->creator->setDownDefinition($downDefinition);

@@ -255,10 +255,10 @@ class MigrationDefinitionWriter {
 
     public function handleCreateTableStatement(CreateStatement $statement) {
         $tableName = $statement->name->table;
-        $this->upDefinition->append($this->createTableBlueprint($tableName), false);
+        $this->upDefinition->append($this->createTableBlueprint($tableName));
         $this->upDefinition->increaseIndentation();
 
-        $this->downDefinition->append($this->dropTableBlueprint($tableName), false);
+        $this->downDefinition->append($this->dropTableBlueprint($tableName));
 
         foreach ($statement->fields as $field) {
             if (!empty($field->name) && !empty($field->type)) {
@@ -346,10 +346,10 @@ class MigrationDefinitionWriter {
 
     public function handleAlterTableStatement(AlterStatement $statement) {
         $tableName = $statement->table->table;
-        $this->upDefinition->append($this->alterTableBlueprint($tableName), false);
+        $this->upDefinition->append($this->alterTableBlueprint($tableName));
         $this->upDefinition->increaseIndentation();
 
-        $this->downDefinition->append($this->alterTableBlueprint($tableName), false);
+        $this->downDefinition->append($this->alterTableBlueprint($tableName));
         $this->downDefinition->increaseIndentation();
 
         foreach ($statement->altered as $alterOperation) {
@@ -508,14 +508,11 @@ class MigrationDefinitionWriter {
     public function handleDropTableStatement(DropStatement $statement) {
         $tables = array_column($statement->fields, 'table');
 
-        $newLine = false;
         foreach($tables as $table) {
-            $this->upDefinition->append($this->dropTableBlueprint($table), $newLine);
+            $this->upDefinition->append($this->dropTableBlueprint($table));
 
             $downComment = '// Revert manually DROP TABLE %s statement to the previous definition.';
-            $this->downDefinition->append(sprintf($downComment, $table), $newLine);
-
-            $newLine = true;
+            $this->downDefinition->append(sprintf($downComment, $table));
         }
     }
 
