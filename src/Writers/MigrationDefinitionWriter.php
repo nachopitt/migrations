@@ -254,6 +254,7 @@ class MigrationDefinitionWriter {
         $tableName = $statement->name->table;
         $this->upDefinition->append($this->createTableBlueprint($tableName), false);
         $this->upDefinition->increaseIndentation();
+
         $this->downDefinition->append($this->dropTableBlueprint($tableName), false);
 
         foreach ($statement->fields as $field) {
@@ -345,6 +346,9 @@ class MigrationDefinitionWriter {
         $this->upDefinition->append($this->alterTableBlueprint($tableName), false);
         $this->upDefinition->increaseIndentation();
 
+        $this->downDefinition->append($this->alterTableBlueprint($tableName), false);
+        $this->downDefinition->increaseIndentation();
+
         foreach ($statement->altered as $alterOperation) {
             $tokens = array_values(array_diff(array_column($alterOperation->unknown, 'value'), [' ']));
             $alterOperationType = $this->getAlterOperationType($alterOperation->options->options, $tokens);
@@ -400,6 +404,7 @@ class MigrationDefinitionWriter {
                 case MigrationDefinitionWriter::ALTER_OPERATION_ADD_UNIQUE:
                 case MigrationDefinitionWriter::ALTER_OPERATION_ADD_FULLTEXT:
                     $fields = $this->getParameters($tokens);
+
                     $keyBlueprintType = 'index';
                     if ($alterOperationType === MigrationDefinitionWriter::ALTER_OPERATION_ADD_UNIQUE) {
                         $keyBlueprintType = 'unique';
@@ -462,6 +467,9 @@ class MigrationDefinitionWriter {
 
         $this->upDefinition->decreaseIndentation();
         $this->upDefinition->append('});');
+
+        $this->downDefinition->decreaseIndentation();
+        $this->downDefinition->append('});');
     }
 
     public function handleDropTableStatement(DropStatement $statement) {
