@@ -4,6 +4,7 @@ namespace Nachopitt\Migrations\Writers;
 
 use Illuminate\Support\Str;
 use Nachopitt\Migrations\MigrationDefinition;
+use Nachopitt\Migrations\Writers\MigrationDefinitionWriter as WritersMigrationDefinitionWriter;
 use PhpMyAdmin\SqlParser\Statements\AlterStatement;
 use PhpMyAdmin\SqlParser\Statements\CreateStatement;
 use PhpMyAdmin\SqlParser\Statements\DropStatement;
@@ -22,10 +23,13 @@ class MigrationDefinitionWriter {
     protected const ALTER_OPERATION_ADD_COLUMN      = 0;
     protected const ALTER_OPERATION_CHANGE_COLUMN   = 1;
     protected const ALTER_OPERATION_ADD_KEY         = 2;
-    protected const ALTER_OPERATION_ADD_CONSTRAINT  = 3;
-    protected const ALTER_OPERATION_DROP_COLUMN     = 4;
-    protected const ALTER_OPERATION_RENAME_INDEX    = 5;
-    protected const ALTER_OPERATION_DROP_INDEX      = 6;
+    protected const ALTER_OPERATION_ADD_INDEX       = 3;
+    protected const ALTER_OPERATION_ADD_UNIQUE      = 4;
+    protected const ALTER_OPERATION_ADD_FULLTEXT    = 5;
+    protected const ALTER_OPERATION_ADD_CONSTRAINT  = 6;
+    protected const ALTER_OPERATION_DROP_COLUMN     = 7;
+    protected const ALTER_OPERATION_RENAME_INDEX    = 8;
+    protected const ALTER_OPERATION_DROP_INDEX      = 9;
 
     public function __construct()
     {
@@ -343,7 +347,7 @@ class MigrationDefinitionWriter {
         $this->upDefinition->increaseIndentation();
 
         foreach ($statement->altered as $alterOperation) {
-            $alterOperationType = $this->getAlterOperationType($alterOperation->options->options);
+            $alterOperationType = $this->getAlterOperationType($alterOperation->options->options, $alterOperation->unknown);
 
             switch ($alterOperationType) {
                 case MigrationDefinitionWriter::ALTER_OPERATION_ADD_COLUMN:
@@ -395,10 +399,20 @@ class MigrationDefinitionWriter {
 
                     break;
                 case MigrationDefinitionWriter::ALTER_OPERATION_ADD_KEY:
+                case MigrationDefinitionWriter::ALTER_OPERATION_ADD_INDEX:
+                case MigrationDefinitionWriter::ALTER_OPERATION_ADD_UNIQUE:
+                case MigrationDefinitionWriter::ALTER_OPERATION_ADD_FULLTEXT:
                     $tokens = array_values(array_diff(array_column($alterOperation->unknown, 'value'), [' ']));
 
                     $fields = $this->getParameters($tokens);
-                    $this->upDefinition->append($this->keyBlueprint('index', $fields, $alterOperation->field->column));
+                    $keyBlueprintType = 'index';
+                    if ($alterOperationType === MigrationDefinitionWriter::ALTER_OPERATION_ADD_UNIQUE) {
+                        $keyBlueprintType = 'unique';
+                    }
+                    else if ($alterOperationType === MigrationDefinitionWriter::ALTER_OPERATION_ADD_FULLTEXT) {
+                        $keyBlueprintType = 'fullText';
+                    }
+                    $this->upDefinition->append($this->keyBlueprint($keyBlueprintType, $fields, $alterOperation->field ? $alterOperation->field->column : end($tokens)));
                     $this->upDefinition->append(';', false, false);
 
                     break;
@@ -462,7 +476,6 @@ class MigrationDefinitionWriter {
     }
 
     public function handleDropTableStatement(DropStatement $statement) {
-        var_dump($statement);
         $tables = array_column($statement->fields, 'table');
 
         $newLine = false;
@@ -483,9 +496,12 @@ class MigrationDefinitionWriter {
         return $parameters;
     }
 
-    protected function getAlterOperationType($options) {
+    protected function getAlterOperationType($options, $tokens) {
         if (is_array($options)) {
             if (!array_diff($options, ['ADD'])) {
+                if (reset($tokens)->value === 'UNIQUE') {
+                    return MigrationDefinitionWriter::ALTER_OPERATION_ADD_UNIQUE;
+                }
                 return MigrationDefinitionWriter::ALTER_OPERATION_ADD_COLUMN;
             }
             else if (!array_diff($options, ['ADD', 'COLUMN'])) {
@@ -501,7 +517,10 @@ class MigrationDefinitionWriter {
                 return MigrationDefinitionWriter::ALTER_OPERATION_ADD_KEY;
             }
             else if (!array_diff($options, ['ADD', 'INDEX'])) {
-                return MigrationDefinitionWriter::ALTER_OPERATION_ADD_KEY;
+                return MigrationDefinitionWriter::ALTER_OPERATION_ADD_INDEX;
+            }
+            else if (!array_diff($options, ['ADD', 'FULLTEXT'])) {
+                return MigrationDefinitionWriter::ALTER_OPERATION_ADD_FULLTEXT;
             }
             else if (!array_diff($options, ['ADD', 'CONSTRAINT'])) {
                 return MigrationDefinitionWriter::ALTER_OPERATION_ADD_CONSTRAINT;
@@ -540,7 +559,7 @@ class MigrationDefinitionWriter {
     }
 
     protected function keyBlueprint($type, $fieldNames, $indexName = null) {
-        $types = ['primary', 'index', 'foreign'];
+        $types = ['primary', 'index', 'unique', 'fullText', 'foreign'];
         $indexName = $indexName !== null ? "'$indexName'" : 'null';
 
         if (in_array($type, $types)) {
