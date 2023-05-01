@@ -4,7 +4,8 @@
     "keywords": ["database","sql","mysql","laravel","migration"],
     "license": "MIT",
     "require": {
-        "laravel/framework": "^9.0|^10.0"
+        "laravel/framework": "^9.0|^10.0",
+        "phpmyadmin/sql-parser": "^5.7"
     },
     "autoload": {
         "psr-4": {
@@ -17,8 +18,5 @@
                 "Nachopitt\\Migrations\\ConsoleSupportServiceProvider"
             ]
         }
-    },
-    "require-dev": {
-        "phpmyadmin/sql-parser": "^5.7"
     }
 }
