@@ -570,6 +570,11 @@ class MigrationDefinitionWriter {
 
                     return MigrationDefinitionWriter::ALTER_OPERATION_DROP_FOREIGN_KEY;
                 }
+                else if (!empty($tokens) && in_array($tokens[0], ['INDEX'])) {
+                    array_shift($tokens);
+
+                    return MigrationDefinitionWriter::ALTER_OPERATION_DROP_INDEX;
+                }
 
                 return MigrationDefinitionWriter::ALTER_OPERATION_DROP_COLUMN;
             }
