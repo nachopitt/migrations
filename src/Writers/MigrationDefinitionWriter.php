@@ -354,7 +354,17 @@ class MigrationDefinitionWriter {
 
         foreach ($statement->altered as $alterOperation) {
             $tokens = array_values(array_diff(array_column($alterOperation->unknown, 'value'), [' ']));
-            $alterOperationType = $this->getAlterOperationType($alterOperation->options->options, $tokens);
+            $options = [];
+            foreach ($alterOperation->options->options as $option) {
+                if (is_array($option) && $option['name'] && $option['value']) {
+                    $tokens[] = $option['name'];
+                    $tokens[] = $option['value'];
+                }
+                else {
+                    $options[] = $option;
+                }
+            }
+            $alterOperationType = $this->getAlterOperationType($options, $tokens);
 
             switch ($alterOperationType) {
                 case MigrationDefinitionWriter::ALTER_OPERATION_ADD_COLUMN:
@@ -488,11 +498,12 @@ class MigrationDefinitionWriter {
                         $blueprintType = 'foreign';
                     }
 
-                    $this->upDefinition->append($this->dropBlueprint($blueprintType, $alterOperation->field->column));
+                    $keyColumnName = $alterOperation->field ? $alterOperation->field->column : $tokens[0];
+                    $this->upDefinition->append($this->dropBlueprint($blueprintType, $keyColumnName));
                     $this->upDefinition->append(';', false, false);
 
                     $downComment = '// Revert manually DROP %s %s alter operation to the previous definition.';
-                    $this->downDefinition->append(sprintf($downComment, strtoupper($blueprintType), $alterOperation->field->column));
+                    $this->downDefinition->append(sprintf($downComment, strtoupper($blueprintType), $keyColumnName));
 
                     break;
             }
