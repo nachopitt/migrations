@@ -485,7 +485,7 @@ class MigrationDefinitionWriter {
                         $blueprintType = 'index';
                     }
                     else if (MigrationDefinitionWriter::ALTER_OPERATION_DROP_FOREIGN_KEY) {
-                        $blueprintType = 'foreing';
+                        $blueprintType = 'foreign';
                     }
 
                     $this->upDefinition->append($this->dropBlueprint($blueprintType, $alterOperation->field->column));
