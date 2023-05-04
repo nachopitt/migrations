@@ -568,7 +568,7 @@ class MigrationDefinitionWriter {
                 if (!empty($tokens) && in_array($tokens[0], ['FOREIGN KEY'])) {
                     array_shift($tokens);
 
-                    return MigrationDefinitionWriter::ALTER_OPERATION_ADD_UNIQUE;
+                    return MigrationDefinitionWriter::ALTER_OPERATION_DROP_FOREIGN_KEY;
                 }
 
                 return MigrationDefinitionWriter::ALTER_OPERATION_DROP_COLUMN;
