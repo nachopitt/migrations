@@ -481,10 +481,10 @@ class MigrationDefinitionWriter {
                 case MigrationDefinitionWriter::ALTER_OPERATION_DROP_INDEX:
                 case MigrationDefinitionWriter::ALTER_OPERATION_DROP_FOREIGN_KEY:
                     $blueprintType = 'column';
-                    if (MigrationDefinitionWriter::ALTER_OPERATION_DROP_INDEX) {
+                    if ($alterOperationType === MigrationDefinitionWriter::ALTER_OPERATION_DROP_INDEX) {
                         $blueprintType = 'index';
                     }
-                    else if (MigrationDefinitionWriter::ALTER_OPERATION_DROP_FOREIGN_KEY) {
+                    else if ($alterOperationType === MigrationDefinitionWriter::ALTER_OPERATION_DROP_FOREIGN_KEY) {
                         $blueprintType = 'foreign';
                     }
 
