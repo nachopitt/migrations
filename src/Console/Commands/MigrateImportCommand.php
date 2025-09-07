@@ -64,54 +64,33 @@ class MigrateImportCommand extends MigrateMakeCommand
             if ($statement instanceof CreateStatement && in_array('TABLE', $statement->options->options)) {
                 $migrationWriter->handleCreateTableStatement($statement);
 
-                if (!$squash) {
-                    $this->creator->setUpDefinition($migrationWriter->getUpDefinition());
-                    $this->creator->setDownDefinition($migrationWriter->getDownDefinition());
-
-                    $this->writeMigration(sprintf('create_%s_table', $statement->name->table), $statement->name->table, true);
-                }
-                else {
-                    $createDefinitions[] = [
-                        'up' => $migrationWriter->getUpDefinition(),
-                        'down' => $migrationWriter->getDownDefinition()
-                    ];
-                }
+                $createDefinitions[] = [
+                    'up' => $migrationWriter->getUpDefinition(),
+                    'down' => $migrationWriter->getDownDefinition(),
+                    'name' => $squash ? $schemaName : $statement->name->table,
+                ];
 
                 $migrationWriter->reset();
             }
             else if ($statement instanceof AlterStatement && in_array('TABLE', $statement->options->options)) {
                 $migrationWriter->handleAlterTableStatement($statement);
 
-                if (!$squash) {
-                    $this->creator->setUpDefinition($migrationWriter->getUpDefinition());
-                    $this->creator->setDownDefinition($migrationWriter->getDownDefinition());
-
-                    $this->writeMigration(sprintf('update_%s_table', $statement->table->table), $statement->table->table, true);
-                }
-                else {
-                    $alterDefinitions[] = [
-                        'up' => $migrationWriter->getUpDefinition(),
-                        'down' => $migrationWriter->getDownDefinition()
-                    ];
-                }
+                $alterDefinitions[] = [
+                    'up' => $migrationWriter->getUpDefinition(),
+                    'down' => $migrationWriter->getDownDefinition(),
+                    'name' => $squash ? $schemaName : $statement->table->table,
+                ];
 
                 $migrationWriter->reset();
             }
             else if ($statement instanceof DropStatement && in_array('TABLE', $statement->options->options)) {
                 $migrationWriter->handleDropTableStatement($statement);
 
-                if (!$squash) {
-                    $this->creator->setUpDefinition($migrationWriter->getUpDefinition());
-                    $this->creator->setDownDefinition($migrationWriter->getDownDefinition());
-
-                    $this->writeMigration(sprintf('delete_%s_table', $statement->fields[0]->table), $statement->fields[0]->table, true);
-                }
-                else {
-                    $dropDefinitions[] = [
-                        'up' => $migrationWriter->getUpDefinition(),
-                        'down' => $migrationWriter->getDownDefinition()
-                    ];
-                }
+                $dropDefinitions[] = [
+                    'up' => $migrationWriter->getUpDefinition(),
+                    'down' => $migrationWriter->getDownDefinition(),
+                    'name' => $squash ? $schemaName : $statement->fields[0]->table,
+                ];
 
                 $migrationWriter->reset();
             }
@@ -122,13 +101,23 @@ class MigrateImportCommand extends MigrateMakeCommand
                 continue;
             }
 
-            $upDefinition = implode("\n", array_column($definitions, 'up'));
-            $downDefinition = implode("\n", array_column($definitions, 'down'));
+            if (!$squash) {
+                foreach ($definitions as $definition) {
+                    $this->creator->setUpDefinition($definition['up']);
+                    $this->creator->setDownDefinition($definition['down']);
 
-            $this->creator->setUpDefinition($upDefinition);
-            $this->creator->setDownDefinition($downDefinition);
+                    $this->writeMigration(sprintf('%s_%s_table', $type, $definition['name']), $definition['name'], true);
+                }
+            }
+            else {
+                $upDefinition = implode("\n", array_column($definitions, 'up'));
+                $downDefinition = implode("\n", array_column($definitions, 'down'));
 
-            $this->writeMigration(sprintf('%s_%s_database', $type, $schemaName), $schemaName, true);
+                $this->creator->setUpDefinition($upDefinition);
+                $this->creator->setDownDefinition($downDefinition);
+
+                $this->writeMigration(sprintf('%s_%s_database', $type, $schemaName), $schemaName, true);
+            }
         }
 
         $this->composer->dumpAutoloads();
