@@ -117,34 +117,18 @@ class MigrateImportCommand extends MigrateMakeCommand
             }
         }
 
-        if (!empty($createDefinitions)) {
-            $upDefinition = implode("\n", array_column($createDefinitions, 'up'));
-            $downDefinition = implode("\n", array_column($createDefinitions, 'down'));
+        foreach (['create' => $createDefinitions, 'update' => $alterDefinitions, 'delete' => $dropDefinitions] as $type => $definitions) {
+            if (empty($definitions)) {
+                continue;
+            }
+
+            $upDefinition = implode("\n", array_column($definitions, 'up'));
+            $downDefinition = implode("\n", array_column($definitions, 'down'));
 
             $this->creator->setUpDefinition($upDefinition);
             $this->creator->setDownDefinition($downDefinition);
 
-            $this->writeMigration(sprintf('create_%s_database', $schemaName), $schemaName, true);
-        }
-
-        if (!empty($alterDefinitions)) {
-            $upDefinition = implode("\n", array_column($alterDefinitions, 'up'));
-            $downDefinition = implode("\n", array_column($alterDefinitions, 'down'));
-
-            $this->creator->setUpDefinition($upDefinition);
-            $this->creator->setDownDefinition($downDefinition);
-
-            $this->writeMigration(sprintf('update_%s_database', $schemaName), $schemaName, true);
-        }
-
-        if (!empty($dropDefinitions)) {
-            $upDefinition = implode("\n", array_column($dropDefinitions, 'up'));
-            $downDefinition = implode("\n", array_column($dropDefinitions, 'down'));
-
-            $this->creator->setUpDefinition($upDefinition);
-            $this->creator->setDownDefinition($downDefinition);
-
-            $this->writeMigration(sprintf('delete_%s_database', $schemaName), $schemaName, true);
+            $this->writeMigration(sprintf('%s_%s_database', $type, $schemaName), $schemaName, true);
         }
 
         $this->composer->dumpAutoloads();
