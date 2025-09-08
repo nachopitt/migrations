@@ -21,6 +21,7 @@ php artisan migrate:import {file? : The SQL file to be imported}
     {--realpath : Indicate any provided migration file paths are pre-resolved absolute paths}
     {--fullpath : Output the full path of the migration}
     {--squash : Generate one migration file instead of multiple files}
+    {--withoutForeignKeyConstraints : Avoid adding foreign key constraints to the migration}
 ```
 
 If `file` argument is not provided, the default value would be `database_model/${database}.sql`, where `${database}` is the default database name.
@@ -32,6 +33,7 @@ If `file` argument is not provided, the default value would be `database_model/$
 *   `--realpath`: Indicate that the provided migration file paths are pre-resolved absolute paths.
 *   `--fullpath`: Output the full path of the migration.
 *   `--squash`: Generate one migration file instead of multiple files. This is useful when you want to combine multiple SQL statements into a single migration.
+*   `--withoutForeignKeyConstraints`: Avoid adding foreign key constraints to the migration.
 
 Once finished, the new migration files will be placed in the usual migrations directory (`database/migrations`) and will follow the usual naming conventions.
 
