@@ -23,7 +23,8 @@ class MigrateImportCommand extends MigrateMakeCommand
         {--path= : The location where the migration file should be created}
         {--realpath : Indicate any provided migration file paths are pre-resolved absolute paths}
         {--fullpath : Output the full path of the migration}
-        {--squash : Generate one migration file instead of multiple files}';
+        {--squash : Generate one migration file instead of multiple files}
+        {--withoutForeignKeyConstraints : Do not include foreign key constraints in the migration}';
 
     /**
      * The console command description.
@@ -50,71 +51,93 @@ class MigrateImportCommand extends MigrateMakeCommand
         $schemaName = $this->option('schema') ?: $defaultDatabase;
         $sqlImportFile = $this->argument('file') ?: "database_model/${defaultDatabase}.sql";
         $squash = $this->option('squash');
+        $withoutForeignKeyConstraints = $this->option('withoutForeignKeyConstraints');
 
         $sqlImportFileContents = File::get($sqlImportFile);
 
         $parser = new Parser($sqlImportFileContents);
         $migrationWriter = new MigrationDefinitionWriter;
 
-        $createDefinitions = [];
-        $alterDefinitions = [];
-        $dropDefinitions = [];
+        $createStatements = [];
+        $alterStatements = [];
+        $dropStatements = [];
 
-        foreach($parser->statements as $statement) {
+        foreach($parser->statements as $key => $statement) {
             if ($statement instanceof CreateStatement && in_array('TABLE', $statement->options->options)) {
-                $migrationWriter->handleCreateTableStatement($statement);
-
-                $createDefinitions[] = [
-                    'up' => $migrationWriter->getUpDefinition(),
-                    'down' => $migrationWriter->getDownDefinition(),
-                    'name' => $squash ? $schemaName : $statement->name->table,
-                ];
-
-                $migrationWriter->reset();
+                $createStatements[] = $statement;
             }
             else if ($statement instanceof AlterStatement && in_array('TABLE', $statement->options->options)) {
-                $migrationWriter->handleAlterTableStatement($statement);
-
-                $alterDefinitions[] = [
-                    'up' => $migrationWriter->getUpDefinition(),
-                    'down' => $migrationWriter->getDownDefinition(),
-                    'name' => $squash ? $schemaName : $statement->table->table,
-                ];
-
-                $migrationWriter->reset();
+                $alterStatements[] = $statement;
             }
             else if ($statement instanceof DropStatement && in_array('TABLE', $statement->options->options)) {
-                $migrationWriter->handleDropTableStatement($statement);
-
-                $dropDefinitions[] = [
-                    'up' => $migrationWriter->getUpDefinition(),
-                    'down' => $migrationWriter->getDownDefinition(),
-                    'name' => $squash ? $schemaName : $statement->fields[0]->table,
-                ];
-
-                $migrationWriter->reset();
+                $dropStatements[] = $statement;
             }
         }
 
-        foreach (['create' => $createDefinitions, 'update' => $alterDefinitions, 'delete' => $dropDefinitions] as $type => $definitions) {
-            if (empty($definitions)) {
+        $allStatements = [
+            'create' => $createStatements,
+            'update' => $alterStatements,
+            'delete' => $dropStatements
+        ];
+
+        foreach ($allStatements as $type => $statements) {
+            if (empty($statements)) {
                 continue;
             }
 
             if (!$squash) {
-                foreach ($definitions as $definition) {
-                    $this->creator->setUpDefinition($definition['up']);
-                    $this->creator->setDownDefinition($definition['down']);
+                foreach ($statements as $statement) {
+                    $migrationWriter->reset();
 
-                    $this->writeMigration(sprintf('%s_%s_table', $type, $definition['name']), $definition['name'], true);
+                    if ($withoutForeignKeyConstraints) {
+                        $migrationWriter->beginWithoutForeignKeyConstraints();
+                    }
+
+                    $name = '';
+                    if ($statement instanceof CreateStatement) {
+                        $migrationWriter->handleCreateTableStatement($statement);
+                        $name = $statement->name->table;
+                    } else if ($statement instanceof AlterStatement) {
+                        $migrationWriter->handleAlterTableStatement($statement);
+                        $name = $statement->table->table;
+                    } else if ($statement instanceof DropStatement) {
+                        $migrationWriter->handleDropTableStatement($statement);
+                        $name = $statement->fields[0]->table;
+                    }
+
+                    if ($withoutForeignKeyConstraints) {
+                        $migrationWriter->endWithoutForeignKeyConstraints();
+                    }
+
+                    $this->creator->setUpDefinition($migrationWriter->getUpDefinition());
+                    $this->creator->setDownDefinition($migrationWriter->getDownDefinition());
+
+                    $this->writeMigration(sprintf('%s_%s_table', $type, $name), $name, true);
                 }
             }
             else {
-                $upDefinition = implode("\n", array_column($definitions, 'up'));
-                $downDefinition = implode("\n", array_column($definitions, 'down'));
+                $migrationWriter->reset();
 
-                $this->creator->setUpDefinition($upDefinition);
-                $this->creator->setDownDefinition($downDefinition);
+                if ($withoutForeignKeyConstraints && !empty($statements)) {
+                    $migrationWriter->beginWithoutForeignKeyConstraints();
+                }
+
+                foreach ($statements as $statement) {
+                    if ($statement instanceof CreateStatement) {
+                        $migrationWriter->handleCreateTableStatement($statement);
+                    } else if ($statement instanceof AlterStatement) {
+                        $migrationWriter->handleAlterTableStatement($statement);
+                    } else if ($statement instanceof DropStatement) {
+                        $migrationWriter->handleDropTableStatement($statement);
+                    }
+                }
+
+                if ($withoutForeignKeyConstraints && !empty($statements)) {
+                    $migrationWriter->endWithoutForeignKeyConstraints();
+                }
+
+                $this->creator->setUpDefinition($migrationWriter->getUpDefinition());
+                $this->creator->setDownDefinition($migrationWriter->getDownDefinition());
 
                 $this->writeMigration(sprintf('%s_%s_database', $type, $schemaName), $schemaName, true);
             }
@@ -128,5 +151,4 @@ class MigrateImportCommand extends MigrateMakeCommand
 
         return Command::SUCCESS;
     }
-
 }

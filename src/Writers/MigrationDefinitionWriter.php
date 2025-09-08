@@ -527,6 +527,22 @@ class MigrationDefinitionWriter {
         }
     }
 
+    public function beginWithoutForeignKeyConstraints() {
+        $this->upDefinition->append('Schema::withoutForeignKeyConstraints(function () {');
+        $this->upDefinition->increaseIndentation();
+
+        $this->downDefinition->append('Schema::withoutForeignKeyConstraints(function () {');
+        $this->downDefinition->increaseIndentation();
+    }
+
+    public function endWithoutForeignKeyConstraints() {
+        $this->upDefinition->decreaseIndentation();
+        $this->upDefinition->append('});');
+
+        $this->downDefinition->decreaseIndentation();
+        $this->downDefinition->append('});');
+    }
+
     protected function getParameters($tokens) {
         $parameters = [];
         $keys = array_keys(array_intersect($tokens, ['(', ')']));
