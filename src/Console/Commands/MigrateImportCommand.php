@@ -49,7 +49,7 @@ class MigrateImportCommand extends MigrateMakeCommand
     {
         $defaultDatabase = config("database.connections.mysql.database");
         $schemaName = $this->option('schema') ?: $defaultDatabase;
-        $sqlImportFile = $this->argument('file') ?: "database_model/${defaultDatabase}.sql";
+        $sqlImportFile = $this->argument('file') ?: "database_model/" . $defaultDatabase . ".sql";
         $squash = $this->option('squash');
         $withoutForeignKeyConstraints = $this->option('withoutForeignKeyConstraints');
 
@@ -142,8 +142,6 @@ class MigrateImportCommand extends MigrateMakeCommand
                 $this->writeMigration(sprintf('%s_%s_database', $type, $schemaName), $schemaName, true);
             }
         }
-
-        $this->composer->dumpAutoloads();
 
         config(["database.connections.mysql.database" => $schemaName]);
 
