@@ -4,11 +4,9 @@ namespace Nachopitt\Migrations\Writers;
 
 use Illuminate\Support\Str;
 use Nachopitt\Migrations\MigrationDefinition;
-use Nachopitt\Migrations\Writers\MigrationDefinitionWriter as WritersMigrationDefinitionWriter;
 use PhpMyAdmin\SqlParser\Statements\AlterStatement;
 use PhpMyAdmin\SqlParser\Statements\CreateStatement;
 use PhpMyAdmin\SqlParser\Statements\DropStatement;
-use PhpMyAdmin\SqlParser\Token;
 
 class MigrationDefinitionWriter {
 
@@ -302,15 +300,11 @@ class MigrationDefinitionWriter {
                 }
             }
             if (!empty($field->key)) {
-                if ($field->key->type === 'PRIMARY KEY') {
-                }
-
                 if ($field->key->type === 'INDEX') {
                     $this->upDefinition->append($this->keyBlueprint('index', array_column($field->key->columns, 'name'), $field->key->name));
                     $this->upDefinition->append(';', false, false);
                 }
-
-                if ($field->key->type  === 'FOREIGN KEY') {
+                else if ($field->key->type  === 'FOREIGN KEY') {
                     $this->upDefinition->append($this->keyBlueprint('foreign', array_column($field->key->columns, 'name'), $field->name));
 
                     if (!empty($field->references)) {
@@ -335,6 +329,10 @@ class MigrationDefinitionWriter {
                         $this->upDefinition->decreaseIndentation();
                     }
 
+                    $this->upDefinition->append(';', false, false);
+                }
+                else if ($field->key->type  === 'FULLTEXT INDEX') {
+                    $this->upDefinition->append($this->keyBlueprint('fullText', array_column($field->key->columns, 'name'), $field->key->name));
                     $this->upDefinition->append(';', false, false);
                 }
             }
