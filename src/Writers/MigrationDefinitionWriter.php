@@ -300,6 +300,10 @@ class MigrationDefinitionWriter {
                 }
             }
             if (!empty($field->key)) {
+                if ($field->key->type === 'PRIMARY KEY') {
+                    $this->upDefinition->append($this->keyBlueprint('primary', array_column($field->key->columns, 'name')));
+                    $this->upDefinition->append(';', false, false);
+                }
                 if ($field->key->type === 'INDEX') {
                     $this->upDefinition->append($this->keyBlueprint('index', array_column($field->key->columns, 'name'), $field->key->name));
                     $this->upDefinition->append(';', false, false);
@@ -333,6 +337,10 @@ class MigrationDefinitionWriter {
                 }
                 else if ($field->key->type  === 'FULLTEXT INDEX') {
                     $this->upDefinition->append($this->keyBlueprint('fullText', array_column($field->key->columns, 'name'), $field->key->name));
+                    $this->upDefinition->append(';', false, false);
+                }
+                else if ($field->key->type  === 'UNIQUE INDEX') {
+                    $this->upDefinition->append($this->keyBlueprint('unique', array_column($field->key->columns, 'name'), $field->key->name));
                     $this->upDefinition->append(';', false, false);
                 }
             }
