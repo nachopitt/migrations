@@ -258,6 +258,8 @@ class MigrationDefinitionWriter {
 
         $this->downDefinition->append($this->dropTableBlueprint($tableName));
 
+        $autoIncrementColumns = $this->getAutoIncrementColumns($statement->fields);
+
         foreach ($statement->fields as $field) {
             if (!empty($field->name) && !empty($field->type)) {
                 if (!empty($this->columnBlueprints[$field->type->name])) {
@@ -301,8 +303,13 @@ class MigrationDefinitionWriter {
             }
             if (!empty($field->key)) {
                 if ($field->key->type === 'PRIMARY KEY') {
-                    $this->upDefinition->append($this->keyBlueprint('primary', array_column($field->key->columns, 'name')));
-                    $this->upDefinition->append(';', false, false);
+                    $primaryColumns = array_column($field->key->columns, 'name');
+
+                    // Avoid duplicate PK definitions (autoIncrement already creates a PK in Laravel schema).
+                    if (!$this->isPrimaryKeyCoveredByAutoIncrementColumn($primaryColumns, $autoIncrementColumns)) {
+                        $this->upDefinition->append($this->keyBlueprint('primary', $primaryColumns));
+                        $this->upDefinition->append(';', false, false);
+                    }
                 }
                 if ($field->key->type === 'INDEX') {
                     $this->upDefinition->append($this->keyBlueprint('index', array_column($field->key->columns, 'name'), $field->key->name));
@@ -732,6 +739,31 @@ class MigrationDefinitionWriter {
 
     protected function renameToBlueprint($newName) {
         return sprintf("\$table->rename('%s')", $newName);
+    }
+
+    protected function getAutoIncrementColumns(array $fields): array {
+        $autoIncrementColumns = [];
+
+        foreach ($fields as $field) {
+            if (empty($field->name) || empty($field->type)) {
+                continue;
+            }
+
+            $options = array_merge($field->type->options->options, $field->options->options);
+
+            foreach ($options as $option) {
+                if ($option === 'AUTO_INCREMENT') {
+                    $autoIncrementColumns[] = $field->name;
+                    break;
+                }
+            }
+        }
+
+        return $autoIncrementColumns;
+    }
+
+    protected function isPrimaryKeyCoveredByAutoIncrementColumn(array $primaryColumns, array $autoIncrementColumns): bool {
+        return count($primaryColumns) === 1 && in_array($primaryColumns[0], $autoIncrementColumns, true);
     }
 
     public function getUpDefinition() {

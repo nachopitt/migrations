@@ -17,6 +17,7 @@ composer require nachopitt/migrations
 ```bash
 php artisan migrate:import {file? : The SQL file to be imported}
     {--schema= : The name of the schema}
+    {--table= : Generate migration for a single table name}
     {--path= : The location where the migration file should be created}
     {--realpath : Indicate any provided migration file paths are pre-resolved absolute paths}
     {--fullpath : Output the full path of the migration}
@@ -29,6 +30,7 @@ If `file` argument is not provided, the default value would be `database_model/$
 ### Options
 
 *   `--schema`: The name of the schema to be used in the migration.
+*   `--table`: Generate migration statements only for the provided table name.
 *   `--path`: The location where the migration file should be created.
 *   `--realpath`: Indicate that the provided migration file paths are pre-resolved absolute paths.
 *   `--fullpath`: Output the full path of the migration.

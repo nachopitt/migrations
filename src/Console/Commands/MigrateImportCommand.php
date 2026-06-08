@@ -20,6 +20,7 @@ class MigrateImportCommand extends MigrateMakeCommand
      */
     protected $signature = 'migrate:import {file? : The SQL file to be imported}
         {--schema= : The name of the schema}
+        {--table= : Generate migration for a single table name}
         {--path= : The location where the migration file should be created}
         {--realpath : Indicate any provided migration file paths are pre-resolved absolute paths}
         {--fullpath : Output the full path of the migration}
@@ -50,6 +51,7 @@ class MigrateImportCommand extends MigrateMakeCommand
         $defaultDatabase = config("database.connections.mysql.database");
         $schemaName = $this->option('schema') ?: $defaultDatabase;
         $sqlImportFile = $this->argument('file') ?: "database_model/" . $defaultDatabase . ".sql";
+        $selectedTable = $this->option('table');
         $squash = $this->option('squash');
         $withoutForeignKeyConstraints = $this->option('withoutForeignKeyConstraints');
 
@@ -63,6 +65,14 @@ class MigrateImportCommand extends MigrateMakeCommand
         $dropStatements = [];
 
         foreach($parser->statements as $key => $statement) {
+            if ($selectedTable !== null) {
+                $statementTableName = $this->getStatementTableName($statement);
+
+                if ($statementTableName === null || strcasecmp($statementTableName, $selectedTable) !== 0) {
+                    continue;
+                }
+            }
+
             if ($statement instanceof CreateStatement && in_array('TABLE', $statement->options->options)) {
                 $createStatements[] = $statement;
             }
@@ -79,6 +89,12 @@ class MigrateImportCommand extends MigrateMakeCommand
             'update' => $alterStatements,
             'delete' => $dropStatements
         ];
+
+        if ($selectedTable !== null && empty($createStatements) && empty($alterStatements) && empty($dropStatements)) {
+            $this->error("No SQL statements found for table '{$selectedTable}'.");
+
+            return Command::FAILURE;
+        }
 
         foreach ($allStatements as $type => $statements) {
             if (empty($statements)) {
@@ -148,5 +164,22 @@ class MigrateImportCommand extends MigrateMakeCommand
         $this->info("Import SQL file $sqlImportFile into a new $schemaName migration finished successfully!");
 
         return Command::SUCCESS;
+    }
+
+    protected function getStatementTableName($statement): ?string
+    {
+        if ($statement instanceof CreateStatement) {
+            return $statement->name->table ?? null;
+        }
+
+        if ($statement instanceof AlterStatement) {
+            return $statement->table->table ?? null;
+        }
+
+        if ($statement instanceof DropStatement) {
+            return $statement->fields[0]->table ?? null;
+        }
+
+        return null;
     }
 }

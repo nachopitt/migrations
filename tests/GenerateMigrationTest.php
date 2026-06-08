@@ -10,10 +10,12 @@ use PHPUnit\Framework\TestCase;
 class GenerateMigrationTest extends TestCase
 {
     private static string $generatedMigration;
+    private static string $singleTableMigration;
 
     public static function setUpBeforeClass(): void
     {
         self::$generatedMigration = self::buildGeneratedMigration();
+        self::$singleTableMigration = self::buildGeneratedMigration('projects');
     }
 
     public function test_generates_migration_file_structure()
@@ -24,49 +26,166 @@ class GenerateMigrationTest extends TestCase
         $this->assertStringContainsString('public function down()', self::$generatedMigration);
     }
 
+    public function test_generates_expected_create_table_order_and_count()
+    {
+        $expectedCreateStatements = [
+            "Schema::create('project_tag', function (Blueprint \$table) {",
+            "Schema::create('project_updates', function (Blueprint \$table) {",
+            "Schema::create('projects', function (Blueprint \$table) {",
+            "Schema::create('tags', function (Blueprint \$table) {",
+            "Schema::create('user_profiles', function (Blueprint \$table) {",
+            "Schema::create('user_roles', function (Blueprint \$table) {",
+        ];
+
+        $this->assertSame(6, substr_count(self::$generatedMigration, "Schema::create('"));
+
+        $lastPosition = -1;
+        foreach ($expectedCreateStatements as $createStatement) {
+            $position = strpos(self::$generatedMigration, $createStatement);
+            $this->assertNotFalse($position, "Missing create statement: {$createStatement}");
+            $this->assertGreaterThan($lastPosition, $position, "Create statement out of order: {$createStatement}");
+            $lastPosition = $position;
+        }
+    }
+
     public function test_wraps_up_and_down_in_without_foreign_key_constraints()
     {
         $this->assertSame(2, substr_count(self::$generatedMigration, 'Schema::withoutForeignKeyConstraints(function () {'));
     }
 
+    public function test_does_not_emit_redundant_primary_for_auto_increment_columns()
+    {
+        $this->assertStringContainsString("\$table->bigInteger('id')", self::$generatedMigration);
+        $this->assertStringContainsString('->autoIncrement();', self::$generatedMigration);
+        $this->assertStringNotContainsString("\$table->primary('id', null);", self::$generatedMigration);
+    }
+
     public function test_generates_project_tag_table_definition()
     {
-      $this->assertStringContainsString("Schema::create('project_tag', function (Blueprint \$table) {", self::$generatedMigration);
-      $this->assertStringContainsString("\$table->foreign('project_id', 'fk_project_tag_projects1')", self::$generatedMigration);
-      $this->assertStringContainsString("\$table->foreign('tag_id', 'fk_project_tag_tags1')", self::$generatedMigration);
+        $table = $this->extractCreateTableBlock('project_tag');
+
+        $this->assertContainsAll($table, [
+            "\$table->bigInteger('id')",
+            '->unsigned()',
+            '->autoIncrement();',
+            "\$table->bigInteger('project_id')",
+            "\$table->bigInteger('tag_id')",
+            "\$table->timestamp('created_at')",
+            "\$table->timestamp('updated_at')",
+            "\$table->index('project_id', 'fk_project_tag_projects1_idx');",
+            "\$table->index('tag_id', 'fk_project_tag_tags1_idx');",
+            "\$table->foreign('project_id', 'fk_project_tag_projects1')",
+            "\$table->foreign('tag_id', 'fk_project_tag_tags1')",
+            "->references('id')",
+            "->on('projects')->onDelete('no action')->onUpdate('no action');",
+            "->on('tags')->onDelete('no action')->onUpdate('no action');",
+        ]);
     }
 
     public function test_generates_project_updates_table_definition()
     {
-      $this->assertStringContainsString("Schema::create('project_updates', function (Blueprint \$table) {", self::$generatedMigration);
-      $this->assertStringContainsString("\$table->fullText('description', 'project_updates_description_FULLTEXT');", self::$generatedMigration);
-      $this->assertStringContainsString("\$table->foreign('updater_user_id', 'fk_project_updates_users1')", self::$generatedMigration);
+        $table = $this->extractCreateTableBlock('project_updates');
+
+        $this->assertContainsAll($table, [
+            "\$table->bigInteger('id')",
+            "\$table->text('description');",
+            "\$table->string('status', 20);",
+            "\$table->tinyInteger('progress_percentage')",
+            "\$table->bigInteger('project_id')",
+            "\$table->bigInteger('updater_user_id')",
+            "\$table->timestamp('created_at')",
+            "\$table->timestamp('updated_at')",
+            "\$table->timestamp('deleted_at')",
+            "\$table->index('project_id', 'fk_project_updates_projects1_idx');",
+            "\$table->index('updater_user_id', 'fk_project_updates_users1_idx');",
+            "\$table->fullText('description', 'project_updates_description_FULLTEXT');",
+            "\$table->foreign('project_id', 'fk_project_updates_projects1')",
+            "\$table->foreign('updater_user_id', 'fk_project_updates_users1')",
+            "->on('projects')->onDelete('no action')->onUpdate('no action');",
+            "->on('users')->onDelete('no action')->onUpdate('no action');",
+        ]);
     }
 
     public function test_generates_projects_table_definition()
     {
-      $this->assertStringContainsString("Schema::create('projects', function (Blueprint \$table) {", self::$generatedMigration);
-      $this->assertStringContainsString("\$table->fullText('title', 'projects_title_FULLTEXT');", self::$generatedMigration);
-      $this->assertStringContainsString("\$table->foreign('assigned_user_id', 'fk_projects_users2')", self::$generatedMigration);
+        $table = $this->extractCreateTableBlock('projects');
+
+        $this->assertContainsAll($table, [
+            "\$table->bigInteger('id')",
+            "\$table->string('title', 255);",
+            "\$table->text('description')",
+            "\$table->string('priority', 20);",
+            "\$table->string('current_status', 20);",
+            "\$table->tinyInteger('current_progress_percentage')",
+            "\$table->date('start_date')",
+            "\$table->date('due_date')",
+            "\$table->date('end_date')",
+            "\$table->bigInteger('parent_id')",
+            "\$table->bigInteger('reporter_user_id')",
+            "\$table->bigInteger('assigned_user_id')",
+            "\$table->timestamp('created_at')",
+            "\$table->timestamp('updated_at')",
+            "\$table->timestamp('deleted_at')",
+            "\$table->index('parent_id', 'fk_projects_projects1_idx');",
+            "\$table->index('reporter_user_id', 'fk_projects_users1_idx');",
+            "\$table->index('assigned_user_id', 'fk_projects_users2_idx');",
+            "\$table->fullText('title', 'projects_title_FULLTEXT');",
+            "\$table->fullText('description', 'projects_description_FULLTEXT');",
+            "\$table->foreign('parent_id', 'fk_projects_projects1')",
+            "\$table->foreign('reporter_user_id', 'fk_projects_users1')",
+            "\$table->foreign('assigned_user_id', 'fk_projects_users2')",
+            "->on('projects')->onDelete('no action')->onUpdate('no action');",
+            "->on('users')->onDelete('no action')->onUpdate('no action');",
+        ]);
     }
 
     public function test_generates_tags_table_definition()
     {
-      $this->assertStringContainsString("Schema::create('tags', function (Blueprint \$table) {", self::$generatedMigration);
-      $this->assertStringContainsString("\$table->unique('name', 'name_UNIQUE');", self::$generatedMigration);
+        $table = $this->extractCreateTableBlock('tags');
+
+        $this->assertContainsAll($table, [
+            "\$table->bigInteger('id')",
+            "\$table->string('name', 255);",
+            "\$table->timestamp('created_at')",
+            "\$table->timestamp('updated_at')",
+            "\$table->timestamp('deleted_at')",
+            "\$table->unique('name', 'name_UNIQUE');",
+        ]);
     }
 
     public function test_generates_user_profiles_table_definition()
     {
-      $this->assertStringContainsString("Schema::create('user_profiles', function (Blueprint \$table) {", self::$generatedMigration);
-      $this->assertStringContainsString("\$table->unique('user_id', 'user_id_UNIQUE');", self::$generatedMigration);
-      $this->assertStringContainsString("\$table->foreign('user_id', 'fk_user_profiles_users1')", self::$generatedMigration);
+        $table = $this->extractCreateTableBlock('user_profiles');
+
+        $this->assertContainsAll($table, [
+            "\$table->bigInteger('id')",
+            "\$table->string('first_name', 255);",
+            "\$table->string('last_name', 255);",
+            "\$table->tinyInteger('active')",
+            "\$table->bigInteger('user_id')",
+            "\$table->timestamp('created_at')",
+            "\$table->timestamp('updated_at')",
+            "\$table->index('user_id', 'fk_user_profiles_users1_idx');",
+            "\$table->unique('user_id', 'user_id_UNIQUE');",
+            "\$table->foreign('user_id', 'fk_user_profiles_users1')",
+            "->on('users')->onDelete('no action')->onUpdate('no action');",
+        ]);
     }
 
     public function test_generates_user_roles_table_definition()
     {
-      $this->assertStringContainsString("Schema::create('user_roles', function (Blueprint \$table) {", self::$generatedMigration);
-      $this->assertStringContainsString("\$table->foreign('user_id', 'fk_user_roles_users1')", self::$generatedMigration);
+        $table = $this->extractCreateTableBlock('user_roles');
+
+        $this->assertContainsAll($table, [
+            "\$table->bigInteger('id')",
+            "\$table->string('role', 20);",
+            "\$table->bigInteger('user_id')",
+            "\$table->timestamp('created_at')",
+            "\$table->timestamp('updated_at')",
+            "\$table->index('user_id', 'fk_user_roles_users1_idx');",
+            "\$table->foreign('user_id', 'fk_user_roles_users1')",
+            "->on('users')->onDelete('no action')->onUpdate('no action');",
+        ]);
     }
 
     public function test_generates_down_method_with_expected_drop_order()
@@ -90,7 +209,60 @@ class GenerateMigrationTest extends TestCase
         }
     }
 
-    private static function buildGeneratedMigration(): string
+        public function test_single_table_generation_includes_only_selected_create_statement()
+        {
+            $this->assertSame(1, substr_count(self::$singleTableMigration, "Schema::create('"));
+            $this->assertStringContainsString("Schema::create('projects', function (Blueprint \$table) {", self::$singleTableMigration);
+            $this->assertStringNotContainsString("Schema::create('project_tag', function (Blueprint \$table) {", self::$singleTableMigration);
+            $this->assertStringNotContainsString("Schema::create('project_updates', function (Blueprint \$table) {", self::$singleTableMigration);
+            $this->assertStringNotContainsString("Schema::create('tags', function (Blueprint \$table) {", self::$singleTableMigration);
+            $this->assertStringNotContainsString("Schema::create('user_profiles', function (Blueprint \$table) {", self::$singleTableMigration);
+            $this->assertStringNotContainsString("Schema::create('user_roles', function (Blueprint \$table) {", self::$singleTableMigration);
+        }
+
+        public function test_single_table_generation_has_only_selected_drop_statement()
+        {
+            $this->assertSame(1, substr_count(self::$singleTableMigration, "Schema::dropIfExists('"));
+            $this->assertStringContainsString("Schema::dropIfExists('projects');", self::$singleTableMigration);
+            $this->assertStringNotContainsString("Schema::dropIfExists('project_tag');", self::$singleTableMigration);
+            $this->assertStringNotContainsString("Schema::dropIfExists('project_updates');", self::$singleTableMigration);
+            $this->assertStringNotContainsString("Schema::dropIfExists('tags');", self::$singleTableMigration);
+            $this->assertStringNotContainsString("Schema::dropIfExists('user_profiles');", self::$singleTableMigration);
+            $this->assertStringNotContainsString("Schema::dropIfExists('user_roles');", self::$singleTableMigration);
+        }
+
+      private function extractCreateTableBlock(string $tableName): string
+      {
+            $startNeedle = "Schema::create('{$tableName}', function (Blueprint \$table) {";
+            $startPosition = strpos(self::$generatedMigration, $startNeedle);
+
+            $this->assertNotFalse($startPosition, "Missing create block start for {$tableName}");
+
+            $nextCreatePosition = strpos(self::$generatedMigration, "\n            Schema::create('", $startPosition + strlen($startNeedle));
+            $upMethodEndPosition = strpos(self::$generatedMigration, "\n        });\n    }\n\n    /**", $startPosition + strlen($startNeedle));
+
+            $endCandidates = [];
+            if ($nextCreatePosition !== false) {
+                $endCandidates[] = $nextCreatePosition;
+            }
+
+            if ($upMethodEndPosition !== false) {
+                $endCandidates[] = $upMethodEndPosition;
+            }
+
+            $this->assertNotEmpty($endCandidates, "Missing create block end for {$tableName}");
+
+            return substr(self::$generatedMigration, $startPosition, min($endCandidates) - $startPosition);
+      }
+
+      private function assertContainsAll(string $haystack, array $needles): void
+      {
+            foreach ($needles as $needle) {
+                $this->assertStringContainsString($needle, $haystack);
+            }
+      }
+
+    private static function buildGeneratedMigration(?string $onlyTable = null): string
     {
         $sql = <<<'SQL'
 -- MySQL Script generated by MySQL Workbench
@@ -272,6 +444,10 @@ SQL;
 
         foreach ($parser->statements as $statement) {
             if ($statement instanceof CreateStatement && in_array('TABLE', $statement->options->options)) {
+                if ($onlyTable !== null && $statement->name->table !== $onlyTable) {
+                    continue;
+                }
+
                 $migrationWriter->handleCreateTableStatement($statement);
             }
         }
