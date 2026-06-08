@@ -55,7 +55,12 @@ class MigrateImportCommand extends MigrateMakeCommand
         $squash = $this->option('squash');
         $withoutForeignKeyConstraints = $this->option('withoutForeignKeyConstraints');
 
-        $sqlImportFileContents = File::get($sqlImportFile);
+        try {
+            $sqlImportFileContents = File::get($sqlImportFile);
+        } catch (\Exception $e) {
+            $this->error("File does not exist at path {$sqlImportFile}");
+            return 1;
+        }
 
         $parser = new Parser($sqlImportFileContents);
         $migrationWriter = new MigrationDefinitionWriter;
