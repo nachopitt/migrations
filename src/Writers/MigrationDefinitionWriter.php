@@ -2,6 +2,7 @@
 
 namespace Nachopitt\Migrations\Writers;
 
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Nachopitt\Migrations\MigrationDefinition;
 use PhpMyAdmin\SqlParser\Statements\AlterStatement;
@@ -346,8 +347,12 @@ class MigrationDefinitionWriter {
                     $this->upDefinition->append(';', false, false);
                 }
                 else if ($field->key->type  === 'FULLTEXT INDEX') {
+                    $this->upDefinition->append("if (Schema::getConnection()->getDriverName() !== 'sqlite') {");
+                    $this->upDefinition->increaseIndentation();
                     $this->upDefinition->append($this->keyBlueprint('fullText', array_column($field->key->columns, 'name'), $field->key->name));
                     $this->upDefinition->append(';', false, false);
+                    $this->upDefinition->decreaseIndentation();
+                    $this->upDefinition->append('}');
                 }
                 else if ($field->key->type  === 'UNIQUE INDEX') {
                     $this->upDefinition->append($this->keyBlueprint('unique', array_column($field->key->columns, 'name'), $field->key->name));
@@ -456,11 +461,27 @@ class MigrationDefinitionWriter {
                         $table = $this->getLeadingValueBeforeParameters($tokens);
                     }
 
-                    $this->upDefinition->append($this->keyBlueprint($keyBlueprintType, $fields, $table));
-                    $this->upDefinition->append(';', false, false);
+                    if ($alterOperationType === MigrationDefinitionWriter::ALTER_OPERATION_ADD_FULLTEXT) {
+                        $this->upDefinition->append("if (Schema::getConnection()->getDriverName() !== 'sqlite') {");
+                        $this->upDefinition->increaseIndentation();
+                        $this->upDefinition->append($this->keyBlueprint($keyBlueprintType, $fields, $table));
+                        $this->upDefinition->append(';', false, false);
+                        $this->upDefinition->decreaseIndentation();
+                        $this->upDefinition->append('}');
 
-                    $this->downDefinition->append($this->dropBlueprint($keyBlueprintType, $table));
-                    $this->downDefinition->append(';', false, false);
+                        $this->downDefinition->append("if (Schema::getConnection()->getDriverName() !== 'sqlite') {");
+                        $this->downDefinition->increaseIndentation();
+                        $this->downDefinition->append($this->dropBlueprint($keyBlueprintType, $table));
+                        $this->downDefinition->append(';', false, false);
+                        $this->downDefinition->decreaseIndentation();
+                        $this->downDefinition->append('}');
+                    } else {
+                        $this->upDefinition->append($this->keyBlueprint($keyBlueprintType, $fields, $table));
+                        $this->upDefinition->append(';', false, false);
+
+                        $this->downDefinition->append($this->dropBlueprint($keyBlueprintType, $table));
+                        $this->downDefinition->append(';', false, false);
+                    }
 
                     break;
                 case MigrationDefinitionWriter::ALTER_OPERATION_ADD_CONSTRAINT:

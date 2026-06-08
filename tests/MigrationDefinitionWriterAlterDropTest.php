@@ -76,9 +76,11 @@ class MigrationDefinitionWriterAlterDropTest extends TestCase
         ]);
 
         $this->assertContainsAll($fullTextUp, [
+            "if (Schema::getConnection()->getDriverName() !== 'sqlite') {",
             "\$table->fullText('description', 'projects_description_fulltext');",
         ]);
         $this->assertContainsAll($fullTextDown, [
+            "if (Schema::getConnection()->getDriverName() !== 'sqlite') {",
             "\$table->dropFullText('projects_description_fulltext');",
         ]);
     }
