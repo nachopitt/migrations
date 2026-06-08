@@ -61,7 +61,10 @@ class MigrationDefinitionWriter {
             'CHAR',
             'VARCHAR',
             'BLOB',
+            'TINYTEXT',
             'TEXT',
+            'MEDIUMTEXT',
+            'LONGTEXT',
         ];
 
         foreach ($this->allowedDataTypes as $allowedDataType) {
@@ -370,7 +373,7 @@ class MigrationDefinitionWriter {
             $options = [];
             foreach ($alterOperation->options->options as $option) {
                 if (is_array($option) && $option['name'] && $option['value']) {
-                    $tokens[] = $option['name'];
+                    $options[] = $option['name'];
                     $tokens[] = $option['value'];
                 }
                 else {
@@ -438,14 +441,20 @@ class MigrationDefinitionWriter {
                     $fields = $this->getParameters($tokens);
 
                     $keyBlueprintType = 'index';
+                    $indexOptionName = 'INDEX';
                     if ($alterOperationType === MigrationDefinitionWriter::ALTER_OPERATION_ADD_UNIQUE) {
                         $keyBlueprintType = 'unique';
+                        $indexOptionName = 'UNIQUE';
                     }
                     else if ($alterOperationType === MigrationDefinitionWriter::ALTER_OPERATION_ADD_FULLTEXT) {
                         $keyBlueprintType = 'fullText';
+                        $indexOptionName = 'FULLTEXT';
                     }
 
-                    $table = $alterOperation->field ? $alterOperation->field->column : $tokens[0];
+                    $table = $alterOperation->field ? $alterOperation->field->column : $this->getAlterOptionValue($alterOperation, $indexOptionName);
+                    if ($table === null) {
+                        $table = $this->getLeadingValueBeforeParameters($tokens);
+                    }
 
                     $this->upDefinition->append($this->keyBlueprint($keyBlueprintType, $fields, $table));
                     $this->upDefinition->append(';', false, false);
@@ -479,7 +488,11 @@ class MigrationDefinitionWriter {
 
                     break;
                 case MigrationDefinitionWriter::ALTER_OPERATION_RENAME_TABLE:
-                    $table = $alterOperation->field ? $alterOperation->field->column : $tokens[0];
+                    $table = $alterOperation->field ? $alterOperation->field->column : $this->getAlterOptionValue($alterOperation, 'TO');
+                    if ($table === null) {
+                        $table = $this->getLeadingValueBeforeParameters($tokens);
+                    }
+
                     $this->upDefinition->append($this->renameToBlueprint($table));
                     $this->upDefinition->append(';', false, false);
 
@@ -489,14 +502,16 @@ class MigrationDefinitionWriter {
                     break;
                 case MigrationDefinitionWriter::ALTER_OPERATION_RENAME_COLUMN:
                 case MigrationDefinitionWriter::ALTER_OPERATION_RENAME_INDEX:
-                    foreach ($tokens as $tokenKey => $token) {
-                        if ($token === 'TO') {
-                            $this->upDefinition->append($this->renameBlueprint('index', $alterOperation->field->column, $tokens[$tokenKey + 1]));
-                            $this->upDefinition->append(';', false, false);
+                    $renameBlueprintType = $alterOperationType === MigrationDefinitionWriter::ALTER_OPERATION_RENAME_COLUMN ? 'column' : 'index';
+                    $oldName = $alterOperation->field ? $alterOperation->field->column : $this->getAlterOptionValue($alterOperation, 'INDEX');
+                    $newName = $this->getAlterOptionValue($alterOperation, 'TO');
 
-                            $this->downDefinition->append($this->renameBlueprint('index', $tokens[$tokenKey + 1], $alterOperation->field->column));
-                            $this->downDefinition->append(';', false, false);
-                        }
+                    if ($oldName !== null && $newName !== null) {
+                        $this->upDefinition->append($this->renameBlueprint($renameBlueprintType, $oldName, $newName));
+                        $this->upDefinition->append(';', false, false);
+
+                        $this->downDefinition->append($this->renameBlueprint($renameBlueprintType, $newName, $oldName));
+                        $this->downDefinition->append(';', false, false);
                     }
 
                     break;
@@ -621,22 +636,22 @@ class MigrationDefinitionWriter {
             else if (!array_diff($options, ['DROP', 'COLUMN'])) {
                 return MigrationDefinitionWriter::ALTER_OPERATION_DROP_COLUMN;
             }
+            else if (in_array('RENAME', $options, true) && in_array('COLUMN', $options, true)) {
+                return MigrationDefinitionWriter::ALTER_OPERATION_RENAME_COLUMN;
+            }
+            else if (in_array('RENAME', $options, true) && in_array('INDEX', $options, true)) {
+                return MigrationDefinitionWriter::ALTER_OPERATION_RENAME_INDEX;
+            }
+            else if (in_array('RENAME', $options, true) && in_array('KEY', $options, true)) {
+                return MigrationDefinitionWriter::ALTER_OPERATION_RENAME_INDEX;
+            }
             else if (!array_diff($options, ['RENAME']) && !empty($tokens) && in_array($tokens[0], ['AS'])) {
                 array_shift($tokens);
 
                 return MigrationDefinitionWriter::ALTER_OPERATION_RENAME_TABLE;
             }
-            else if (!array_diff($options, ['RENAME', 'TO'])) {
+            else if (in_array('RENAME', $options, true) && in_array('TO', $options, true)) {
                 return MigrationDefinitionWriter::ALTER_OPERATION_RENAME_TABLE;
-            }
-            else if (!array_diff($options, ['RENAME', 'COLUMN'])) {
-                return MigrationDefinitionWriter::ALTER_OPERATION_RENAME_COLUMN;
-            }
-            else if (!array_diff($options, ['RENAME', 'INDEX'])) {
-                return MigrationDefinitionWriter::ALTER_OPERATION_RENAME_INDEX;
-            }
-            else if (!array_diff($options, ['RENAME', 'KEY'])) {
-                return MigrationDefinitionWriter::ALTER_OPERATION_RENAME_INDEX;
             }
             else if (!array_diff($options, ['DROP', 'INDEX'])) {
                 return MigrationDefinitionWriter::ALTER_OPERATION_DROP_INDEX;
@@ -739,6 +754,26 @@ class MigrationDefinitionWriter {
 
     protected function renameToBlueprint($newName) {
         return sprintf("\$table->rename('%s')", $newName);
+    }
+
+    protected function getAlterOptionValue($alterOperation, string $optionName): ?string {
+        foreach ($alterOperation->options->options as $option) {
+            if (is_array($option) && $option['name'] === $optionName) {
+                return $option['value'];
+            }
+        }
+
+        return null;
+    }
+
+    protected function getLeadingValueBeforeParameters(array $tokens): ?string {
+        foreach ($tokens as $token) {
+            if (!in_array($token, ['(', ')', ','], true)) {
+                return $token;
+            }
+        }
+
+        return null;
     }
 
     protected function getAutoIncrementColumns(array $fields): array {
