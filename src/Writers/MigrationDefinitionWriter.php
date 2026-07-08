@@ -551,8 +551,59 @@ class MigrationDefinitionWriter {
                     $this->upDefinition->append($this->dropBlueprint($blueprintType, $keyColumnName));
                     $this->upDefinition->append(';', false, false);
 
-                    $downComment = '// Revert manually DROP %s %s alter operation to the previous definition.';
-                    $this->downDefinition->append(sprintf($downComment, strtoupper($blueprintType), $keyColumnName));
+                    $downAdded = false;
+
+                    if ($alterOperationType === MigrationDefinitionWriter::ALTER_OPERATION_DROP_INDEX) {
+                        try {
+                            if (Schema::hasTable($tableName)) {
+                                $indexes = Schema::getIndexes($tableName);
+                                foreach ($indexes as $index) {
+                                    if (strcasecmp($index['name'], $keyColumnName) === 0) {
+                                        $type = $index['unique'] ? 'unique' : 'index';
+                                        $this->downDefinition->append($this->keyBlueprint($type, $index['columns'], $keyColumnName));
+                                        $this->downDefinition->append(';', false, false);
+                                        $downAdded = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        } catch (\Throwable $e) {
+                            // Fallback to comment
+                        }
+                    }
+                    else if ($alterOperationType === MigrationDefinitionWriter::ALTER_OPERATION_DROP_FOREIGN_KEY) {
+                        try {
+                            if (Schema::hasTable($tableName)) {
+                                $foreignKeys = Schema::getForeignKeys($tableName);
+                                foreach ($foreignKeys as $fk) {
+                                    if (strcasecmp($fk['name'], $keyColumnName) === 0) {
+                                        $definition = sprintf("\$table->foreign(['%s'], '%s')", implode("', '", $fk['columns']), $keyColumnName);
+                                        $definition .= sprintf("->references(['%s'])", implode("', '", $fk['foreign_columns']));
+                                        $definition .= sprintf("->on('%s')", $fk['foreign_table']);
+
+                                        if (isset($fk['on_delete']) && strtolower($fk['on_delete']) !== 'no action') {
+                                            $definition .= sprintf("->onDelete('%s')", $fk['on_delete']);
+                                        }
+                                        if (isset($fk['on_update']) && strtolower($fk['on_update']) !== 'no action') {
+                                            $definition .= sprintf("->onUpdate('%s')", $fk['on_update']);
+                                        }
+
+                                        $this->downDefinition->append($definition);
+                                        $this->downDefinition->append(';', false, false);
+                                        $downAdded = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        } catch (\Throwable $e) {
+                            // Fallback to comment
+                        }
+                    }
+
+                    if (!$downAdded) {
+                        $downComment = '// Revert manually DROP %s %s alter operation to the previous definition.';
+                        $this->downDefinition->append(sprintf($downComment, strtoupper($blueprintType), $keyColumnName));
+                    }
 
                     break;
             }
