@@ -649,20 +649,20 @@ class MigrationDefinitionWriter {
         $this->downDefinition->append($this->alterTableBlueprint($tableName));
         $this->downDefinition->increaseIndentation();
 
-        $upDropsContent = trim($upDrops->get());
+        $upDropsContent = trim($upDrops->get(), "\r\n");
         if ($upDropsContent !== '') {
             $this->upDefinition->append($upDropsContent, true, false);
         }
-        $upAddsContent = trim($upAdds->get());
+        $upAddsContent = trim($upAdds->get(), "\r\n");
         if ($upAddsContent !== '') {
             $this->upDefinition->append($upAddsContent, true, false);
         }
 
-        $downDropsContent = trim($downDrops->get());
+        $downDropsContent = trim($downDrops->get(), "\r\n");
         if ($downDropsContent !== '') {
             $this->downDefinition->append($downDropsContent, true, false);
         }
-        $downAddsContent = trim($downAdds->get());
+        $downAddsContent = trim($downAdds->get(), "\r\n");
         if ($downAddsContent !== '') {
             $this->downDefinition->append($downAddsContent, true, false);
         }
