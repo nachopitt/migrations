@@ -18,6 +18,10 @@ class MigrationDefinition {
         $this->indentation = $indentation;
     }
 
+    public function getIndentation() {
+        return $this->indentation;
+    }
+
     public function increaseIndentation($indentation = 1) {
         $this->indentation += $indentation;
     }

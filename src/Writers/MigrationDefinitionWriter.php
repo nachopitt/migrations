@@ -367,11 +367,21 @@ class MigrationDefinitionWriter {
 
     public function handleAlterTableStatement(AlterStatement $statement) {
         $tableName = $statement->table->table;
-        $this->upDefinition->append($this->alterTableBlueprint($tableName));
-        $this->upDefinition->increaseIndentation();
 
-        $this->downDefinition->append($this->alterTableBlueprint($tableName));
-        $this->downDefinition->increaseIndentation();
+        $originalUp = $this->upDefinition;
+        $originalDown = $this->downDefinition;
+
+        $upDrops = new MigrationDefinition;
+        $upDrops->setIndentation($originalUp->getIndentation() + 1);
+
+        $upAdds = new MigrationDefinition;
+        $upAdds->setIndentation($originalUp->getIndentation() + 1);
+
+        $downDrops = new MigrationDefinition;
+        $downDrops->setIndentation($originalDown->getIndentation() + 1);
+
+        $downAdds = new MigrationDefinition;
+        $downAdds->setIndentation($originalDown->getIndentation() + 1);
 
         foreach ($statement->altered as $alterOperation) {
             $tokens = array_values(array_diff(array_column($alterOperation->unknown, 'value'), [' ']));
@@ -386,6 +396,27 @@ class MigrationDefinitionWriter {
                 }
             }
             $alterOperationType = $this->getAlterOperationType($options, $tokens);
+
+            switch ($alterOperationType) {
+                case MigrationDefinitionWriter::ALTER_OPERATION_DROP_COLUMN:
+                case MigrationDefinitionWriter::ALTER_OPERATION_DROP_INDEX:
+                case MigrationDefinitionWriter::ALTER_OPERATION_DROP_FOREIGN_KEY:
+                    $this->upDefinition = $upDrops;
+                    $this->downDefinition = $downAdds;
+                    break;
+                case MigrationDefinitionWriter::ALTER_OPERATION_ADD_COLUMN:
+                case MigrationDefinitionWriter::ALTER_OPERATION_ADD_INDEX:
+                case MigrationDefinitionWriter::ALTER_OPERATION_ADD_UNIQUE:
+                case MigrationDefinitionWriter::ALTER_OPERATION_ADD_FULLTEXT:
+                case MigrationDefinitionWriter::ALTER_OPERATION_ADD_CONSTRAINT:
+                    $this->upDefinition = $upAdds;
+                    $this->downDefinition = $downDrops;
+                    break;
+                default:
+                    $this->upDefinition = $upAdds;
+                    $this->downDefinition = $downAdds;
+                    break;
+            }
 
             switch ($alterOperationType) {
                 case MigrationDefinitionWriter::ALTER_OPERATION_ADD_COLUMN:
@@ -607,6 +638,33 @@ class MigrationDefinitionWriter {
 
                     break;
             }
+        }
+
+        $this->upDefinition = $originalUp;
+        $this->downDefinition = $originalDown;
+
+        $this->upDefinition->append($this->alterTableBlueprint($tableName));
+        $this->upDefinition->increaseIndentation();
+
+        $this->downDefinition->append($this->alterTableBlueprint($tableName));
+        $this->downDefinition->increaseIndentation();
+
+        $upDropsContent = trim($upDrops->get());
+        if ($upDropsContent !== '') {
+            $this->upDefinition->append($upDropsContent, true, false);
+        }
+        $upAddsContent = trim($upAdds->get());
+        if ($upAddsContent !== '') {
+            $this->upDefinition->append($upAddsContent, true, false);
+        }
+
+        $downDropsContent = trim($downDrops->get());
+        if ($downDropsContent !== '') {
+            $this->downDefinition->append($downDropsContent, true, false);
+        }
+        $downAddsContent = trim($downAdds->get());
+        if ($downAddsContent !== '') {
+            $this->downDefinition->append($downAddsContent, true, false);
         }
 
         $this->upDefinition->decreaseIndentation();
