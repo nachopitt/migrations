@@ -579,8 +579,38 @@ class MigrationDefinitionWriter {
                     }
 
                     $keyColumnName = $alterOperation->field ? $alterOperation->field->column : $tokens[0];
-                    $this->upDefinition->append($this->dropBlueprint($blueprintType, $keyColumnName));
-                    $this->upDefinition->append(';', false, false);
+
+                    $isFullText = false;
+                    if ($alterOperationType === MigrationDefinitionWriter::ALTER_OPERATION_DROP_INDEX) {
+                        try {
+                            if (Schema::hasTable($tableName)) {
+                                $indexes = Schema::getIndexes($tableName);
+                                foreach ($indexes as $index) {
+                                    if (strcasecmp($index['name'], $keyColumnName) === 0) {
+                                        if ((isset($index['type']) && strtolower($index['type']) === 'fulltext') || 
+                                            stripos($index['name'], 'fulltext') !== false) {
+                                            $isFullText = true;
+                                        }
+                                        break;
+                                    }
+                                }
+                            }
+                        } catch (\Throwable $e) {
+                            // Fallback
+                        }
+                    }
+
+                    if ($isFullText) {
+                        $this->upDefinition->append("if (Schema::getConnection()->getDriverName() !== 'sqlite') {");
+                        $this->upDefinition->increaseIndentation();
+                        $this->upDefinition->append($this->dropBlueprint('fullText', $keyColumnName));
+                        $this->upDefinition->append(';', false, false);
+                        $this->upDefinition->decreaseIndentation();
+                        $this->upDefinition->append('}');
+                    } else {
+                        $this->upDefinition->append($this->dropBlueprint($blueprintType, $keyColumnName));
+                        $this->upDefinition->append(';', false, false);
+                    }
 
                     $downAdded = false;
 
@@ -590,9 +620,18 @@ class MigrationDefinitionWriter {
                                 $indexes = Schema::getIndexes($tableName);
                                 foreach ($indexes as $index) {
                                     if (strcasecmp($index['name'], $keyColumnName) === 0) {
-                                        $type = $index['unique'] ? 'unique' : 'index';
-                                        $this->downDefinition->append($this->keyBlueprint($type, $index['columns'], $keyColumnName));
-                                        $this->downDefinition->append(';', false, false);
+                                        $type = $index['unique'] ? 'unique' : ($isFullText ? 'fullText' : 'index');
+                                        if ($type === 'fullText') {
+                                            $this->downDefinition->append("if (Schema::getConnection()->getDriverName() !== 'sqlite') {");
+                                            $this->downDefinition->increaseIndentation();
+                                            $this->downDefinition->append($this->keyBlueprint($type, $index['columns'], $keyColumnName));
+                                            $this->downDefinition->append(';', false, false);
+                                            $this->downDefinition->decreaseIndentation();
+                                            $this->downDefinition->append('}');
+                                        } else {
+                                            $this->downDefinition->append($this->keyBlueprint($type, $index['columns'], $keyColumnName));
+                                            $this->downDefinition->append(';', false, false);
+                                        }
                                         $downAdded = true;
                                         break;
                                     }
