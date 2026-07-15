@@ -2,16 +2,18 @@
 
 namespace Nachopitt\Migrations;
 
-class MigrationCreator extends \Illuminate\Database\Migrations\MigrationCreator {
-
+class MigrationCreator extends \Illuminate\Database\Migrations\MigrationCreator
+{
     protected $upDefinition;
     protected $downDefinition;
 
-    public function setUpDefinition($upDefinition) {
+    public function setUpDefinition($upDefinition)
+    {
         $this->upDefinition = $upDefinition;
     }
 
-    public function setDownDefinition($downDefinition) {
+    public function setDownDefinition($downDefinition)
+    {
         $this->downDefinition = $downDefinition;
     }
 
@@ -30,8 +32,7 @@ class MigrationCreator extends \Illuminate\Database\Migrations\MigrationCreator 
                             : __DIR__.'/stubs/migration.create.stub';
 
             return $this->files->get($stub);
-        }
-        else {
+        } else {
             return parent::getStub($table, $create);
         }
     }
@@ -43,17 +44,19 @@ class MigrationCreator extends \Illuminate\Database\Migrations\MigrationCreator 
         // Here we will replace the table place-holders with the table specified by
         // the developer, which is useful for quickly creating a tables creation
         // or update migration from the console instead of typing it manually.
-        if (!is_null($this->upDefinition)) {
+        if (! is_null($this->upDefinition)) {
             $stub = str_replace(
                 ['DummyUpDefinition', '{{ upDefinition }}', '{{upDefinition}}'],
-                $this->upDefinition, $stub
+                $this->upDefinition,
+                $stub
             );
         }
 
-        if (!is_null($this->downDefinition)) {
+        if (! is_null($this->downDefinition)) {
             $stub = str_replace(
                 ['DummyDownDefinition', '{{ downDefinition }}', '{{downDefinition}}'],
-                $this->downDefinition, $stub
+                $this->downDefinition,
+                $stub
             );
         }
 

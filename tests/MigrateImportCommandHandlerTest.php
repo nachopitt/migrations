@@ -3,8 +3,6 @@
 namespace Nachopitt\Migrations\Tests;
 
 use Illuminate\Support\Facades\File;
-use Nachopitt\Migrations\Console\Commands\MigrateImportCommand;
-use Nachopitt\Migrations\MigrationCreator;
 use Nachopitt\Migrations\MigrationServiceProvider;
 use Orchestra\Testbench\TestCase;
 
@@ -16,20 +14,22 @@ class MigrateImportCommandHandlerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         $this->testFixture = __DIR__ . '/fixtures/test.sql';
         $this->migrationPath = $this->app->databasePath('migrations');
-        
+
         // Create fixture and migration directories
-        if (!is_dir(__DIR__ . '/fixtures')) {
+        if (! is_dir(__DIR__ . '/fixtures')) {
             mkdir(__DIR__ . '/fixtures', 0755, true);
         }
-        if (!is_dir($this->migrationPath)) {
+        if (! is_dir($this->migrationPath)) {
             mkdir($this->migrationPath, 0755, true);
         }
-        
+
         // Create test SQL file
-        File::put($this->testFixture, <<<'SQL'
+        File::put(
+            $this->testFixture,
+            <<<'SQL'
 CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -89,7 +89,7 @@ SQL
     {
         $this->artisan('migrate:import', [
             'file' => $this->testFixture,
-            '--table' => 'users'
+            '--table' => 'users',
         ])
             ->assertExitCode(0);
 
@@ -101,13 +101,13 @@ SQL
     public function test_migrate_import_command_with_custom_path()
     {
         $customPath = $this->app->basePath('custom_migrations');
-        if (!is_dir($customPath)) {
+        if (! is_dir($customPath)) {
             mkdir($customPath, 0755, true);
         }
 
         $this->artisan('migrate:import', [
             'file' => $this->testFixture,
-            '--path' => $customPath
+            '--path' => $customPath,
         ])
             ->assertExitCode(0);
 
@@ -124,7 +124,7 @@ SQL
     {
         $this->artisan('migrate:import', [
             'file' => $this->testFixture,
-            '--withoutForeignKeyConstraints' => true
+            '--withoutForeignKeyConstraints' => true,
         ])
             ->assertExitCode(0);
     }
@@ -133,7 +133,7 @@ SQL
     {
         $this->artisan('migrate:import', [
             'file' => $this->testFixture,
-            '--schema' => 'mysql'
+            '--schema' => 'mysql',
         ])
             ->assertExitCode(0);
     }
@@ -143,7 +143,7 @@ SQL
         if (file_exists($this->testFixture)) {
             unlink($this->testFixture);
         }
-        
+
         $fixtureDir = __DIR__ . '/fixtures';
         if (is_dir($fixtureDir)) {
             rmdir($fixtureDir);
@@ -153,7 +153,7 @@ SQL
             File::cleanDirectory($this->migrationPath);
             rmdir($this->migrationPath);
         }
-        
+
         parent::tearDown();
     }
 }

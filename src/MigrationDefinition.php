@@ -2,35 +2,41 @@
 
 namespace Nachopitt\Migrations;
 
-class MigrationDefinition {
-
+class MigrationDefinition
+{
     private $definition;
     private $indentation;
 
     private const TAB_SIZE = 4;
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->definition = '';
         $this->indentation = 2;
     }
 
-    public function setIndentation($indentation) {
+    public function setIndentation($indentation)
+    {
         $this->indentation = $indentation;
     }
 
-    public function getIndentation() {
+    public function getIndentation()
+    {
         return $this->indentation;
     }
 
-    public function increaseIndentation($indentation = 1) {
+    public function increaseIndentation($indentation = 1)
+    {
         $this->indentation += $indentation;
     }
 
-    public function decreaseIndentation($indentation = 1) {
+    public function decreaseIndentation($indentation = 1)
+    {
         $this->indentation -= $indentation;
     }
 
-    public function append($definition, $newLine = true, $indent = true) {
+    public function append($definition, $newLine = true, $indent = true)
+    {
         if ($newLine) {
             $this->definition .= "\n";
         }
@@ -42,7 +48,8 @@ class MigrationDefinition {
         $this->definition .= $definition;
     }
 
-    public function get() {
+    public function get()
+    {
         return $this->definition;
     }
 }

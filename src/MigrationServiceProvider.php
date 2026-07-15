@@ -2,7 +2,6 @@
 
 namespace Nachopitt\Migrations;
 
-use Nachopitt\Migrations\MigrationCreator;
 use Nachopitt\Migrations\Console\Commands\MigrateImportCommand;
 
 class MigrationServiceProvider extends \Illuminate\Database\MigrationServiceProvider
@@ -10,7 +9,7 @@ class MigrationServiceProvider extends \Illuminate\Database\MigrationServiceProv
     public function __construct($app)
     {
         $this->commands = [
-            'MigrateImport' => MigrateImportCommand::class
+            'MigrateImport' => MigrateImportCommand::class,
         ];
         parent::__construct($app);
     }
