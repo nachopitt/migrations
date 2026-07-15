@@ -98,9 +98,11 @@ jobs:
           fi
 
       - name: Run dependency analysis
+        if: matrix.dependency-version == 'prefer-stable'
         run: composer analyse-deps
 
       - name: Run style check
+        if: matrix.dependency-version == 'prefer-stable'
         run: composer lint
 
       - name: Execute tests
