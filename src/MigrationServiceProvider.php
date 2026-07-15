@@ -19,18 +19,14 @@ class MigrationServiceProvider extends \Illuminate\Database\MigrationServiceProv
      *
      * @return void
      */
-    protected function registerRepository()
-    {
-    }
+    protected function registerRepository() {}
 
     /**
      * Register the migrator service.
      *
      * @return void
      */
-    protected function registerMigrator()
-    {
-    }
+    protected function registerMigrator() {}
 
     /**
      * Register the migration creator.

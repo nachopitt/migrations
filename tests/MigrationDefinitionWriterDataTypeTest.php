@@ -13,7 +13,7 @@ class MigrationDefinitionWriterDataTypeTest extends TestCase
     #[DataProvider('columnTypeProvider')]
     public function test_maps_supported_mysql_column_types(string $columnDefinition, array $expectedBlueprints): void
     {
-        $writer = new MigrationDefinitionWriter();
+        $writer = new MigrationDefinitionWriter;
         $statement = $this->parseCreateStatement($columnDefinition);
 
         $writer->handleCreateTableStatement($statement);

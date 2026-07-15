@@ -6,8 +6,8 @@
     "keywords": ["database","sql","mysql","laravel","migration"],
     "license": "MIT",
     "require": {
-        "php": "^8.0",
-        "laravel/framework": "^9.0|^10.0|^11.0|^12.0|^13.0",
+        "php": "^8.2",
+        "laravel/framework": "^11.0|^12.0|^13.0",
         "phpmyadmin/sql-parser": "^5.7"
     },
     "autoload": {
@@ -28,15 +28,15 @@
         }
     },
     "require-dev": {
-        "phpunit/phpunit": "^9.6|^10.0|^11.0",
-        "orchestra/testbench": "^7.0|^8.0|^9.0|^10.0|^11.0",
+        "phpunit/phpunit": "^11.0",
+        "orchestra/testbench": "^9.0|^10.0|^11.0",
         "shipmonk/composer-dependency-analyser": "^1.8",
-        "friendsofphp/php-cs-fixer": "^3.95"
+        "laravel/pint": "^1.13"
     },
     "scripts": {
         "test": "vendor/bin/phpunit --colors=always --testdox",
         "analyse-deps": "vendor/bin/composer-dependency-analyser",
-        "lint": "vendor/bin/php-cs-fixer fix --dry-run --diff",
-        "format": "vendor/bin/php-cs-fixer fix"
+        "lint": "vendor/bin/pint --test",
+        "format": "vendor/bin/pint"
     }
 }

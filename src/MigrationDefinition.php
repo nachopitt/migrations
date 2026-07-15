@@ -5,6 +5,7 @@ namespace Nachopitt\Migrations;
 class MigrationDefinition
 {
     private $definition;
+
     private $indentation;
 
     private const TAB_SIZE = 4;

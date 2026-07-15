@@ -10,6 +10,7 @@ use PHPUnit\Framework\TestCase;
 class GenerateMigrationTest extends TestCase
 {
     private static string $generatedMigration;
+
     private static string $singleTableMigration;
 
     public static function setUpBeforeClass(): void
@@ -438,7 +439,7 @@ SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
 SQL;
 
         $parser = new Parser($sql);
-        $migrationWriter = new MigrationDefinitionWriter();
+        $migrationWriter = new MigrationDefinitionWriter;
 
         // mimic squash + withoutForeignKeyConstraints behavior
         $migrationWriter->reset();
@@ -459,7 +460,7 @@ SQL;
         $up = $migrationWriter->getUpDefinition();
         $down = $migrationWriter->getDownDefinition();
 
-        $stub = file_get_contents(__DIR__ . '/../src/stubs/migration.create.stub');
+        $stub = file_get_contents(__DIR__.'/../src/stubs/migration.create.stub');
 
         $generated = str_replace(['DummyUpDefinition', '{{ upDefinition }}', '{{upDefinition}}'], $up, $stub);
         $generated = str_replace(['DummyDownDefinition', '{{ downDefinition }}', '{{downDefinition}}'], $down, $generated);

@@ -1,9 +1,11 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 use ShipMonk\ComposerDependencyAnalyser\Config\Configuration;
 use ShipMonk\ComposerDependencyAnalyser\Config\ErrorType;
 
-$config = new Configuration();
+$config = new Configuration;
 
 return $config
     // orchestra/testbench is a metapackage that installs orchestra/testbench-core.

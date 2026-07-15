@@ -5,6 +5,7 @@ namespace Nachopitt\Migrations\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Database\Console\Migrations\MigrateMakeCommand;
 use Illuminate\Support\Facades\File;
+use Nachopitt\Migrations\MigrationCreator;
 use Nachopitt\Migrations\Writers\MigrationDefinitionWriter;
 use PhpMyAdmin\SqlParser\Parser;
 use PhpMyAdmin\SqlParser\Statements\AlterStatement;
@@ -37,7 +38,7 @@ class MigrateImportCommand extends MigrateMakeCommand
     /**
      * The migration creator instance.
      *
-     * @var \Nachopitt\Migrations\MigrationCreator
+     * @var MigrationCreator
      */
     protected $creator;
 
@@ -48,9 +49,9 @@ class MigrateImportCommand extends MigrateMakeCommand
      */
     public function handle()
     {
-        $defaultDatabase = config("database.connections.mysql.database");
+        $defaultDatabase = config('database.connections.mysql.database');
         $schemaName = $this->option('schema') ?: $defaultDatabase;
-        $sqlImportFile = $this->argument('file') ?: "database_model/" . $defaultDatabase . ".sql";
+        $sqlImportFile = $this->argument('file') ?: 'database_model/'.$defaultDatabase.'.sql';
         $selectedTable = $this->option('table');
         $squash = $this->option('squash');
         $withoutForeignKeyConstraints = $this->option('withoutForeignKeyConstraints');
@@ -64,7 +65,7 @@ class MigrateImportCommand extends MigrateMakeCommand
         }
 
         $parser = new Parser($sqlImportFileContents);
-        $migrationWriter = new MigrationDefinitionWriter();
+        $migrationWriter = new MigrationDefinitionWriter;
 
         $createStatements = [];
         $alterStatements = [];
@@ -162,7 +163,7 @@ class MigrateImportCommand extends MigrateMakeCommand
             }
         }
 
-        config(["database.connections.mysql.database" => $schemaName]);
+        config(['database.connections.mysql.database' => $schemaName]);
 
         $this->info("Import SQL file $sqlImportFile into a new $schemaName migration finished successfully!");
 

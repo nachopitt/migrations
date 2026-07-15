@@ -5,6 +5,7 @@ namespace Nachopitt\Migrations;
 class MigrationCreator extends \Illuminate\Database\Migrations\MigrationCreator
 {
     protected $upDefinition;
+
     protected $downDefinition;
 
     public function setUpDefinition($upDefinition)

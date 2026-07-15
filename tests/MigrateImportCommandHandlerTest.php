@@ -9,18 +9,19 @@ use Orchestra\Testbench\TestCase;
 class MigrateImportCommandHandlerTest extends TestCase
 {
     protected string $testFixture;
+
     protected string $migrationPath;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->testFixture = __DIR__ . '/fixtures/test.sql';
+        $this->testFixture = __DIR__.'/fixtures/test.sql';
         $this->migrationPath = $this->app->databasePath('migrations');
 
         // Create fixture and migration directories
-        if (! is_dir(__DIR__ . '/fixtures')) {
-            mkdir(__DIR__ . '/fixtures', 0755, true);
+        if (! is_dir(__DIR__.'/fixtures')) {
+            mkdir(__DIR__.'/fixtures', 0755, true);
         }
         if (! is_dir($this->migrationPath)) {
             mkdir($this->migrationPath, 0755, true);
@@ -81,7 +82,7 @@ SQL
             ->assertExitCode(0);
 
         // Verify migration files were created
-        $files = File::glob($this->migrationPath . '/*_create_*.php');
+        $files = File::glob($this->migrationPath.'/*_create_*.php');
         $this->assertGreaterThan(0, count($files));
     }
 
@@ -94,7 +95,7 @@ SQL
             ->assertExitCode(0);
 
         // Check that only users migration was created
-        $files = File::glob($this->migrationPath . '/*_create_*.php');
+        $files = File::glob($this->migrationPath.'/*_create_*.php');
         $this->assertGreaterThan(0, count($files));
     }
 
@@ -120,7 +121,7 @@ SQL
             ->assertExitCode(1);
     }
 
-    public function test_migrate_import_command_with_withoutForeignKeyConstraints()
+    public function test_migrate_import_command_with_without_foreign_key_constraints()
     {
         $this->artisan('migrate:import', [
             'file' => $this->testFixture,
@@ -144,7 +145,7 @@ SQL
             unlink($this->testFixture);
         }
 
-        $fixtureDir = __DIR__ . '/fixtures';
+        $fixtureDir = __DIR__.'/fixtures';
         if (is_dir($fixtureDir)) {
             rmdir($fixtureDir);
         }

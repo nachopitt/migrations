@@ -12,30 +12,47 @@ use PhpMyAdmin\SqlParser\Statements\DropStatement;
 class MigrationDefinitionWriter
 {
     protected $allowedDataTypes;
+
     protected $columnBlueprints;
+
     protected $columnModifierBlueprints;
+
     protected $actionBlueprints;
+
     protected $referencesOptionBlueprints;
+
     protected MigrationDefinition $upDefinition;
+
     protected MigrationDefinition $downDefinition;
 
     protected const ALTER_OPERATION_ADD_COLUMN = 0;
+
     protected const ALTER_OPERATION_CHANGE_COLUMN = 1;
+
     protected const ALTER_OPERATION_ADD_INDEX = 2;
+
     protected const ALTER_OPERATION_ADD_UNIQUE = 3;
+
     protected const ALTER_OPERATION_ADD_FULLTEXT = 4;
+
     protected const ALTER_OPERATION_ADD_CONSTRAINT = 5;
+
     protected const ALTER_OPERATION_DROP_COLUMN = 6;
+
     protected const ALTER_OPERATION_DROP_INDEX = 7;
+
     protected const ALTER_OPERATION_DROP_FOREIGN_KEY = 8;
+
     protected const ALTER_OPERATION_RENAME_TABLE = 9;
+
     protected const ALTER_OPERATION_RENAME_COLUMN = 10;
+
     protected const ALTER_OPERATION_RENAME_INDEX = 11;
 
     public function __construct()
     {
-        $this->upDefinition = new MigrationDefinition();
-        $this->downDefinition = new MigrationDefinition();
+        $this->upDefinition = new MigrationDefinition;
+        $this->downDefinition = new MigrationDefinition;
 
         $this->allowedDataTypes = [
             'INT',
@@ -213,10 +230,10 @@ class MigrationDefinitionWriter
         $this->columnModifierBlueprints = [
             'whitelist' => [
                 'UNSIGNED' => function ($optionValue) {
-                    return "->unsigned()";
+                    return '->unsigned()';
                 },
                 'AUTO_INCREMENT' => function ($optionValue) {
-                    return "->autoIncrement()";
+                    return '->autoIncrement()';
                 },
                 'CHARACTER SET' => function ($optionValue) {
                     return sprintf("->charset('%s')", $optionValue);
@@ -226,11 +243,11 @@ class MigrationDefinitionWriter
                 },
                 'DEFAULT' => function ($optionValue) {
                     if ($optionValue === 'NULL') {
-                        return "->default(NULL)";
+                        return '->default(NULL)';
                     } else {
                         $format = '%s';
                         if (is_numeric($optionValue)) {
-                            $format = '"' . $format . '"';
+                            $format = '"'.$format.'"';
                         }
 
                         return sprintf("->default($format)", $optionValue);
@@ -242,7 +259,7 @@ class MigrationDefinitionWriter
             ],
             'blacklist' => [
                 'NOT NULL' => function () {
-                    return "->nullable()";
+                    return '->nullable()';
                 },
             ],
         ];
@@ -394,16 +411,16 @@ class MigrationDefinitionWriter
         $originalUp = $this->upDefinition;
         $originalDown = $this->downDefinition;
 
-        $upDrops = new MigrationDefinition();
+        $upDrops = new MigrationDefinition;
         $upDrops->setIndentation($originalUp->getIndentation() + 1);
 
-        $upAdds = new MigrationDefinition();
+        $upAdds = new MigrationDefinition;
         $upAdds->setIndentation($originalUp->getIndentation() + 1);
 
-        $downDrops = new MigrationDefinition();
+        $downDrops = new MigrationDefinition;
         $downDrops->setIndentation($originalDown->getIndentation() + 1);
 
-        $downAdds = new MigrationDefinition();
+        $downAdds = new MigrationDefinition;
         $downAdds->setIndentation($originalDown->getIndentation() + 1);
 
         foreach ($statement->altered as $alterOperation) {
@@ -488,7 +505,7 @@ class MigrationDefinitionWriter
                             $this->upDefinition->append(';', false, false);
                         }
 
-                        $this->downDefinition->append('// Revert manually CHANGE COLUMN ' . $alterOperation->field->column . ' alter operation to the previous definition.');
+                        $this->downDefinition->append('// Revert manually CHANGE COLUMN '.$alterOperation->field->column.' alter operation to the previous definition.');
                     } else {
                         $this->downDefinition->append($this->dropBlueprint('column', $alterOperation->field->column));
                         $this->downDefinition->append(';', false, false);
@@ -906,7 +923,7 @@ class MigrationDefinitionWriter
 
     protected function dropBlueprint($type, $key)
     {
-        return "\$table" . $this->genericBlueprint('drop' . ucfirst($type), $key);
+        return '$table'.$this->genericBlueprint('drop'.ucfirst($type), $key);
     }
 
     protected function onBlueprint($tableName)
@@ -1001,7 +1018,7 @@ class MigrationDefinitionWriter
 
     public function reset()
     {
-        $this->upDefinition = new MigrationDefinition();
-        $this->downDefinition = new MigrationDefinition();
+        $this->upDefinition = new MigrationDefinition;
+        $this->downDefinition = new MigrationDefinition;
     }
 }
