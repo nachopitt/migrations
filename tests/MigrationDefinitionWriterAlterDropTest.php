@@ -177,7 +177,7 @@ class MigrationDefinitionWriterAlterDropTest extends TestCase
 
     public function test_generates_drop_table_statements()
     {
-        $writer = new MigrationDefinitionWriter();
+        $writer = new MigrationDefinitionWriter;
         $statement = $this->parseStatement(
             'DROP TABLE IF EXISTS `project_tag`, `project_updates`',
             DropStatement::class
@@ -198,7 +198,7 @@ class MigrationDefinitionWriterAlterDropTest extends TestCase
 
     private function buildAlterDefinitions(string $sql): array
     {
-        $writer = new MigrationDefinitionWriter();
+        $writer = new MigrationDefinitionWriter;
         $statement = $this->parseStatement($sql, AlterStatement::class);
 
         $writer->handleAlterTableStatement($statement);

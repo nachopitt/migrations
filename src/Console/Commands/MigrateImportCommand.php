@@ -5,10 +5,11 @@ namespace Nachopitt\Migrations\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Database\Console\Migrations\MigrateMakeCommand;
 use Illuminate\Support\Facades\File;
+use Nachopitt\Migrations\MigrationCreator;
 use Nachopitt\Migrations\Writers\MigrationDefinitionWriter;
 use PhpMyAdmin\SqlParser\Parser;
-use PhpMyAdmin\SqlParser\Statements\CreateStatement;
 use PhpMyAdmin\SqlParser\Statements\AlterStatement;
+use PhpMyAdmin\SqlParser\Statements\CreateStatement;
 use PhpMyAdmin\SqlParser\Statements\DropStatement;
 
 class MigrateImportCommand extends MigrateMakeCommand
@@ -37,7 +38,7 @@ class MigrateImportCommand extends MigrateMakeCommand
     /**
      * The migration creator instance.
      *
-     * @var \Nachopitt\Migrations\MigrationCreator
+     * @var MigrationCreator
      */
     protected $creator;
 
@@ -48,9 +49,9 @@ class MigrateImportCommand extends MigrateMakeCommand
      */
     public function handle()
     {
-        $defaultDatabase = config("database.connections.mysql.database");
+        $defaultDatabase = config('database.connections.mysql.database');
         $schemaName = $this->option('schema') ?: $defaultDatabase;
-        $sqlImportFile = $this->argument('file') ?: "database_model/" . $defaultDatabase . ".sql";
+        $sqlImportFile = $this->argument('file') ?: 'database_model/'.$defaultDatabase.'.sql';
         $selectedTable = $this->option('table');
         $squash = $this->option('squash');
         $withoutForeignKeyConstraints = $this->option('withoutForeignKeyConstraints');
@@ -59,6 +60,7 @@ class MigrateImportCommand extends MigrateMakeCommand
             $sqlImportFileContents = File::get($sqlImportFile);
         } catch (\Exception $e) {
             $this->error("File does not exist at path {$sqlImportFile}");
+
             return 1;
         }
 
@@ -69,7 +71,7 @@ class MigrateImportCommand extends MigrateMakeCommand
         $alterStatements = [];
         $dropStatements = [];
 
-        foreach($parser->statements as $key => $statement) {
+        foreach ($parser->statements as $key => $statement) {
             if ($selectedTable !== null) {
                 $statementTableName = $this->getStatementTableName($statement);
 
@@ -80,11 +82,9 @@ class MigrateImportCommand extends MigrateMakeCommand
 
             if ($statement instanceof CreateStatement && in_array('TABLE', $statement->options->options)) {
                 $createStatements[] = $statement;
-            }
-            else if ($statement instanceof AlterStatement && in_array('TABLE', $statement->options->options)) {
+            } elseif ($statement instanceof AlterStatement && in_array('TABLE', $statement->options->options)) {
                 $alterStatements[] = $statement;
-            }
-            else if ($statement instanceof DropStatement && in_array('TABLE', $statement->options->options)) {
+            } elseif ($statement instanceof DropStatement && in_array('TABLE', $statement->options->options)) {
                 $dropStatements[] = $statement;
             }
         }
@@ -92,7 +92,7 @@ class MigrateImportCommand extends MigrateMakeCommand
         $allStatements = [
             'create' => $createStatements,
             'update' => $alterStatements,
-            'delete' => $dropStatements
+            'delete' => $dropStatements,
         ];
 
         if ($selectedTable !== null && empty($createStatements) && empty($alterStatements) && empty($dropStatements)) {
@@ -106,7 +106,7 @@ class MigrateImportCommand extends MigrateMakeCommand
                 continue;
             }
 
-            if (!$squash) {
+            if (! $squash) {
                 foreach ($statements as $statement) {
                     $migrationWriter->reset();
 
@@ -118,10 +118,10 @@ class MigrateImportCommand extends MigrateMakeCommand
                     if ($statement instanceof CreateStatement) {
                         $migrationWriter->handleCreateTableStatement($statement);
                         $name = $statement->name->table;
-                    } else if ($statement instanceof AlterStatement) {
+                    } elseif ($statement instanceof AlterStatement) {
                         $migrationWriter->handleAlterTableStatement($statement);
                         $name = $statement->table->table;
-                    } else if ($statement instanceof DropStatement) {
+                    } elseif ($statement instanceof DropStatement) {
                         $migrationWriter->handleDropTableStatement($statement);
                         $name = $statement->fields[0]->table;
                     }
@@ -135,25 +135,24 @@ class MigrateImportCommand extends MigrateMakeCommand
 
                     $this->writeMigration(sprintf('%s_%s_table', $type, $name), $name, true);
                 }
-            }
-            else {
+            } else {
                 $migrationWriter->reset();
 
-                if ($withoutForeignKeyConstraints && !empty($statements)) {
+                if ($withoutForeignKeyConstraints && ! empty($statements)) {
                     $migrationWriter->beginWithoutForeignKeyConstraints();
                 }
 
                 foreach ($statements as $statement) {
                     if ($statement instanceof CreateStatement) {
                         $migrationWriter->handleCreateTableStatement($statement);
-                    } else if ($statement instanceof AlterStatement) {
+                    } elseif ($statement instanceof AlterStatement) {
                         $migrationWriter->handleAlterTableStatement($statement);
-                    } else if ($statement instanceof DropStatement) {
+                    } elseif ($statement instanceof DropStatement) {
                         $migrationWriter->handleDropTableStatement($statement);
                     }
                 }
 
-                if ($withoutForeignKeyConstraints && !empty($statements)) {
+                if ($withoutForeignKeyConstraints && ! empty($statements)) {
                     $migrationWriter->endWithoutForeignKeyConstraints();
                 }
 
@@ -164,7 +163,7 @@ class MigrateImportCommand extends MigrateMakeCommand
             }
         }
 
-        config(["database.connections.mysql.database" => $schemaName]);
+        config(['database.connections.mysql.database' => $schemaName]);
 
         $this->info("Import SQL file $sqlImportFile into a new $schemaName migration finished successfully!");
 

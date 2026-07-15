@@ -1,0 +1,109 @@
+name: Run Tests
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Laravel 11
+          - laravel: 11.*
+            testbench: 9.*
+            php: 8.2
+            dependency-version: prefer-stable
+          - laravel: 11.*
+            testbench: 9.*
+            php: 8.2
+            dependency-version: prefer-lowest
+          - laravel: 11.*
+            testbench: 9.*
+            php: 8.3
+            dependency-version: prefer-stable
+          - laravel: 11.*
+            testbench: 9.*
+            php: 8.3
+            dependency-version: prefer-lowest
+
+          # Laravel 12
+          - laravel: 12.*
+            testbench: 10.*
+            php: 8.2
+            dependency-version: prefer-stable
+          - laravel: 12.*
+            testbench: 10.*
+            php: 8.2
+            dependency-version: prefer-lowest
+          - laravel: 12.*
+            testbench: 10.*
+            php: 8.3
+            dependency-version: prefer-stable
+          - laravel: 12.*
+            testbench: 10.*
+            php: 8.3
+            dependency-version: prefer-lowest
+
+          # Laravel 13
+          - laravel: 13.*
+            testbench: 11.*
+            php: 8.3
+            dependency-version: prefer-stable
+          - laravel: 13.*
+            testbench: 11.*
+            php: 8.3
+            dependency-version: prefer-lowest
+          - laravel: 13.*
+            testbench: 11.*
+            php: 8.4
+            dependency-version: prefer-stable
+          - laravel: 13.*
+            testbench: 11.*
+            php: 8.4
+            dependency-version: prefer-lowest
+
+    name: PHP ${{ matrix.php }} - Laravel ${{ matrix.laravel }} - Testbench ${{ matrix.testbench }} (${{ matrix.dependency-version }})
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv, imagick, fileinfo
+          coverage: none
+
+      - name: Setup problem matchers
+        run: echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
+
+      - name: Validate composer.json
+        run: composer validate --strict
+
+      - name: Install dependencies
+        run: |
+          composer config policy.advisories.block false
+          composer require "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" --no-interaction --no-update
+          if [ "${{ matrix.dependency-version }}" == "prefer-lowest" ]; then
+            composer update --prefer-lowest --prefer-stable --no-interaction --no-progress
+          else
+            composer update --prefer-dist --no-interaction --no-progress --prefer-stable
+          fi
+
+      - name: Run dependency analysis
+        if: matrix.dependency-version == 'prefer-stable'
+        run: composer analyse-deps
+
+      - name: Run style check
+        if: matrix.dependency-version == 'prefer-stable'
+        run: composer lint
+
+      - name: Execute tests
+        run: composer test

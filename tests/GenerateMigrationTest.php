@@ -10,6 +10,7 @@ use PHPUnit\Framework\TestCase;
 class GenerateMigrationTest extends TestCase
 {
     private static string $generatedMigration;
+
     private static string $singleTableMigration;
 
     public static function setUpBeforeClass(): void
@@ -211,58 +212,58 @@ class GenerateMigrationTest extends TestCase
         }
     }
 
-        public function test_single_table_generation_includes_only_selected_create_statement()
-        {
-            $this->assertSame(1, substr_count(self::$singleTableMigration, "Schema::create('"));
-            $this->assertStringContainsString("Schema::create('projects', function (Blueprint \$table) {", self::$singleTableMigration);
-            $this->assertStringNotContainsString("Schema::create('project_tag', function (Blueprint \$table) {", self::$singleTableMigration);
-            $this->assertStringNotContainsString("Schema::create('project_updates', function (Blueprint \$table) {", self::$singleTableMigration);
-            $this->assertStringNotContainsString("Schema::create('tags', function (Blueprint \$table) {", self::$singleTableMigration);
-            $this->assertStringNotContainsString("Schema::create('user_profiles', function (Blueprint \$table) {", self::$singleTableMigration);
-            $this->assertStringNotContainsString("Schema::create('user_roles', function (Blueprint \$table) {", self::$singleTableMigration);
+    public function test_single_table_generation_includes_only_selected_create_statement()
+    {
+        $this->assertSame(1, substr_count(self::$singleTableMigration, "Schema::create('"));
+        $this->assertStringContainsString("Schema::create('projects', function (Blueprint \$table) {", self::$singleTableMigration);
+        $this->assertStringNotContainsString("Schema::create('project_tag', function (Blueprint \$table) {", self::$singleTableMigration);
+        $this->assertStringNotContainsString("Schema::create('project_updates', function (Blueprint \$table) {", self::$singleTableMigration);
+        $this->assertStringNotContainsString("Schema::create('tags', function (Blueprint \$table) {", self::$singleTableMigration);
+        $this->assertStringNotContainsString("Schema::create('user_profiles', function (Blueprint \$table) {", self::$singleTableMigration);
+        $this->assertStringNotContainsString("Schema::create('user_roles', function (Blueprint \$table) {", self::$singleTableMigration);
+    }
+
+    public function test_single_table_generation_has_only_selected_drop_statement()
+    {
+        $this->assertSame(1, substr_count(self::$singleTableMigration, "Schema::dropIfExists('"));
+        $this->assertStringContainsString("Schema::dropIfExists('projects');", self::$singleTableMigration);
+        $this->assertStringNotContainsString("Schema::dropIfExists('project_tag');", self::$singleTableMigration);
+        $this->assertStringNotContainsString("Schema::dropIfExists('project_updates');", self::$singleTableMigration);
+        $this->assertStringNotContainsString("Schema::dropIfExists('tags');", self::$singleTableMigration);
+        $this->assertStringNotContainsString("Schema::dropIfExists('user_profiles');", self::$singleTableMigration);
+        $this->assertStringNotContainsString("Schema::dropIfExists('user_roles');", self::$singleTableMigration);
+    }
+
+    private function extractCreateTableBlock(string $tableName): string
+    {
+        $startNeedle = "Schema::create('{$tableName}', function (Blueprint \$table) {";
+        $startPosition = strpos(self::$generatedMigration, $startNeedle);
+
+        $this->assertNotFalse($startPosition, "Missing create block start for {$tableName}");
+
+        $nextCreatePosition = strpos(self::$generatedMigration, "\n            Schema::create('", $startPosition + strlen($startNeedle));
+        $upMethodEndPosition = strpos(self::$generatedMigration, "\n        });\n    }\n\n    /**", $startPosition + strlen($startNeedle));
+
+        $endCandidates = [];
+        if ($nextCreatePosition !== false) {
+            $endCandidates[] = $nextCreatePosition;
         }
 
-        public function test_single_table_generation_has_only_selected_drop_statement()
-        {
-            $this->assertSame(1, substr_count(self::$singleTableMigration, "Schema::dropIfExists('"));
-            $this->assertStringContainsString("Schema::dropIfExists('projects');", self::$singleTableMigration);
-            $this->assertStringNotContainsString("Schema::dropIfExists('project_tag');", self::$singleTableMigration);
-            $this->assertStringNotContainsString("Schema::dropIfExists('project_updates');", self::$singleTableMigration);
-            $this->assertStringNotContainsString("Schema::dropIfExists('tags');", self::$singleTableMigration);
-            $this->assertStringNotContainsString("Schema::dropIfExists('user_profiles');", self::$singleTableMigration);
-            $this->assertStringNotContainsString("Schema::dropIfExists('user_roles');", self::$singleTableMigration);
+        if ($upMethodEndPosition !== false) {
+            $endCandidates[] = $upMethodEndPosition;
         }
 
-      private function extractCreateTableBlock(string $tableName): string
-      {
-            $startNeedle = "Schema::create('{$tableName}', function (Blueprint \$table) {";
-            $startPosition = strpos(self::$generatedMigration, $startNeedle);
+        $this->assertNotEmpty($endCandidates, "Missing create block end for {$tableName}");
 
-            $this->assertNotFalse($startPosition, "Missing create block start for {$tableName}");
+        return substr(self::$generatedMigration, $startPosition, min($endCandidates) - $startPosition);
+    }
 
-            $nextCreatePosition = strpos(self::$generatedMigration, "\n            Schema::create('", $startPosition + strlen($startNeedle));
-            $upMethodEndPosition = strpos(self::$generatedMigration, "\n        });\n    }\n\n    /**", $startPosition + strlen($startNeedle));
-
-            $endCandidates = [];
-            if ($nextCreatePosition !== false) {
-                $endCandidates[] = $nextCreatePosition;
-            }
-
-            if ($upMethodEndPosition !== false) {
-                $endCandidates[] = $upMethodEndPosition;
-            }
-
-            $this->assertNotEmpty($endCandidates, "Missing create block end for {$tableName}");
-
-            return substr(self::$generatedMigration, $startPosition, min($endCandidates) - $startPosition);
-      }
-
-      private function assertContainsAll(string $haystack, array $needles): void
-      {
-            foreach ($needles as $needle) {
-                $this->assertStringContainsString($needle, $haystack);
-            }
-      }
+    private function assertContainsAll(string $haystack, array $needles): void
+    {
+        foreach ($needles as $needle) {
+            $this->assertStringContainsString($needle, $haystack);
+        }
+    }
 
     private static function buildGeneratedMigration(?string $onlyTable = null): string
     {
@@ -438,7 +439,7 @@ SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
 SQL;
 
         $parser = new Parser($sql);
-        $migrationWriter = new MigrationDefinitionWriter();
+        $migrationWriter = new MigrationDefinitionWriter;
 
         // mimic squash + withoutForeignKeyConstraints behavior
         $migrationWriter->reset();
@@ -459,7 +460,7 @@ SQL;
         $up = $migrationWriter->getUpDefinition();
         $down = $migrationWriter->getDownDefinition();
 
-        $stub = file_get_contents(__DIR__ . '/../src/stubs/migration.create.stub');
+        $stub = file_get_contents(__DIR__.'/../src/stubs/migration.create.stub');
 
         $generated = str_replace(['DummyUpDefinition', '{{ upDefinition }}', '{{upDefinition}}'], $up, $stub);
         $generated = str_replace(['DummyDownDefinition', '{{ downDefinition }}', '{{downDefinition}}'], $down, $generated);
