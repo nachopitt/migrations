@@ -51,7 +51,67 @@ class MigrationDefinitionWriterDataTypeTest extends TestCase
             'text' => ['`sample` TEXT NOT NULL', ["\$table->text('sample');"]],
             'mediumtext' => ['`sample` MEDIUMTEXT NOT NULL', ["\$table->mediumText('sample');"]],
             'longtext' => ['`sample` LONGTEXT NOT NULL', ["\$table->longText('sample');"]],
+            'json' => ['`sample` JSON NOT NULL', ["\$table->json('sample');"]],
         ];
+    }
+
+    public function test_generates_create_table_statements(): void
+    {
+        // CREATE TABLE `tags` ...
+        $sql1 = 'CREATE TABLE `tags` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  `color_code` varchar(7) NULL,
+  `created_at` timestamp NULL,
+  `updated_at` timestamp NULL,
+  PRIMARY KEY (`id`)
+) CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci;';
+
+        $parser1 = new Parser($sql1);
+        $writer1 = new MigrationDefinitionWriter;
+        $writer1->handleCreateTableStatement($parser1->statements[0]);
+        $generated1 = $writer1->getUpDefinition();
+
+        $this->assertStringContainsString("Schema::create('tags', function (Blueprint \$table) {", $generated1);
+        $this->assertStringContainsString("\$table->bigInteger('id')", $generated1);
+        $this->assertStringContainsString('->unsigned()', $generated1);
+        $this->assertStringContainsString('->autoIncrement();', $generated1);
+        $this->assertStringContainsString("\$table->string('name', 255);", $generated1);
+        $this->assertStringContainsString("\$table->string('color_code', 7)", $generated1);
+        $this->assertStringContainsString('->nullable();', $generated1);
+        $this->assertStringContainsString("\$table->timestamp('created_at')", $generated1);
+        $this->assertStringContainsString("\$table->timestamp('updated_at')", $generated1);
+
+        // CREATE TABLE `patient_tag` ...
+        $sql2 = 'CREATE TABLE `patient_tag` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `patient_id` bigint unsigned NOT NULL,
+  `tag_id` bigint unsigned NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE INDEX `patient_patient_id_tag_id_unique` (`patient_id`, `tag_id`),
+  INDEX `patient_tag_patient_id_foreign` (`patient_id`),
+  INDEX `patient_tag_tag_id_foreign` (`tag_id`),
+  CONSTRAINT `patient_tag_patient_id_foreign` FOREIGN KEY (`patient_id`) REFERENCES `patients` (`id`) ON UPDATE NO ACTION ON DELETE NO ACTION,
+  CONSTRAINT `patient_tag_tag_id_foreign` FOREIGN KEY (`tag_id`) REFERENCES `tags` (`id`) ON UPDATE NO ACTION ON DELETE NO ACTION
+) CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci;';
+
+        $parser2 = new Parser($sql2);
+        $writer2 = new MigrationDefinitionWriter;
+        $writer2->handleCreateTableStatement($parser2->statements[0]);
+        $generated2 = $writer2->getUpDefinition();
+
+        $this->assertStringContainsString("Schema::create('patient_tag', function (Blueprint \$table) {", $generated2);
+        $this->assertStringContainsString("\$table->bigInteger('id')", $generated2);
+        $this->assertStringContainsString("\$table->bigInteger('patient_id')", $generated2);
+        $this->assertStringContainsString("\$table->bigInteger('tag_id')", $generated2);
+        $this->assertStringContainsString("\$table->unique(['patient_id', 'tag_id'], 'patient_patient_id_tag_id_unique');", $generated2);
+        $this->assertStringContainsString("\$table->index('patient_id', 'patient_tag_patient_id_foreign');", $generated2);
+        $this->assertStringContainsString("\$table->index('tag_id', 'patient_tag_tag_id_foreign');", $generated2);
+        $this->assertStringContainsString("\$table->foreign('patient_id', 'patient_tag_patient_id_foreign')", $generated2);
+        $this->assertStringContainsString("->references('id')", $generated2);
+        $this->assertStringContainsString("->on('patients')->onDelete('no action')->onUpdate('no action');", $generated2);
+        $this->assertStringContainsString("\$table->foreign('tag_id', 'patient_tag_tag_id_foreign')", $generated2);
+        $this->assertStringContainsString("->on('tags')->onDelete('no action')->onUpdate('no action');", $generated2);
     }
 
     private function parseCreateStatement(string $columnDefinition): CreateStatement

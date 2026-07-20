@@ -196,6 +196,90 @@ class MigrationDefinitionWriterAlterDropTest extends TestCase
         ]);
     }
 
+    public function test_generates_modify_column_alter_statements_with_comments_and_json()
+    {
+        // 1. ALTER TABLE `appointment_procedures` MODIFY COLUMN `price_charged` decimal(10,2) NOT NULL;
+        [$up1, $down1] = $this->buildAlterDefinitions(
+            'ALTER TABLE `appointment_procedures` MODIFY COLUMN `price_charged` decimal(10,2) NOT NULL'
+        );
+        $this->assertContainsAll($up1, [
+            "Schema::table('appointment_procedures', function (Blueprint \$table) {",
+            "\$table->decimal('price_charged')",
+            '->change();',
+        ]);
+        $this->assertStringContainsString(
+            '// Revert manually CHANGE COLUMN price_charged alter operation to the previous definition.',
+            $down1
+        );
+
+        // 2. ALTER TABLE `appointments` MODIFY COLUMN `status` varchar(255) NOT NULL COMMENT "`scheduled`, `confirmed`, `arrived`, `in_chair`, `completed`, `cancelled`, `no_show`", MODIFY COLUMN `notes` text NULL COMMENT "Reason for appointment / details";
+        [$up2, $down2] = $this->buildAlterDefinitions(
+            'ALTER TABLE `appointments` MODIFY COLUMN `status` varchar(255) NOT NULL COMMENT "`scheduled`, `confirmed`, `arrived`, `in_chair`, `completed`, `cancelled`, `no_show`", MODIFY COLUMN `notes` text NULL COMMENT "Reason for appointment / details"'
+        );
+        $this->assertContainsAll($up2, [
+            "Schema::table('appointments', function (Blueprint \$table) {",
+            "\$table->string('status', 255)",
+            "->comment('`scheduled`, `confirmed`, `arrived`, `in_chair`, `completed`, `cancelled`, `no_show`')",
+            '->change();',
+            "\$table->text('notes')",
+            "->comment('Reason for appointment / details')",
+            '->nullable()',
+            '->change();',
+        ]);
+        $this->assertStringContainsString(
+            '// Revert manually CHANGE COLUMN status alter operation to the previous definition.',
+            $down2
+        );
+        $this->assertStringContainsString(
+            '// Revert manually CHANGE COLUMN notes alter operation to the previous definition.',
+            $down2
+        );
+
+        // 3. ALTER TABLE `medical_histories` MODIFY COLUMN `allergies` text NULL COMMENT "Penicillin, Latex", MODIFY COLUMN `medications` text NULL COMMENT "Aspirin", MODIFY COLUMN `notes` text NULL COMMENT "Clinical medical notes", ADD COLUMN `preexisting_conditions` json NULL COMMENT "{\"diabetes\": true, \"hypertension\": false}" AFTER `medications`;
+        [$up3, $down3] = $this->buildAlterDefinitions(
+            'ALTER TABLE `medical_histories` MODIFY COLUMN `allergies` text NULL COMMENT "Penicillin, Latex", MODIFY COLUMN `medications` text NULL COMMENT "Aspirin", MODIFY COLUMN `notes` text NULL COMMENT "Clinical medical notes", ADD COLUMN `preexisting_conditions` json NULL COMMENT "{\"diabetes\": true, \"hypertension\": false}" AFTER `medications`'
+        );
+        $this->assertContainsAll($up3, [
+            "Schema::table('medical_histories', function (Blueprint \$table) {",
+            "\$table->text('allergies')",
+            "->comment('Penicillin, Latex')",
+            '->nullable()',
+            '->change();',
+            "\$table->text('medications')",
+            "->comment('Aspirin')",
+            '->nullable()',
+            '->change();',
+            "\$table->text('notes')",
+            "->comment('Clinical medical notes')",
+            '->nullable()',
+            '->change();',
+            "\$table->json('preexisting_conditions')",
+            "->comment('{\"diabetes\": true, \"hypertension\": false}')",
+            "->after('medications')",
+            '->nullable();',
+        ]);
+        $this->assertStringContainsString(
+            '// Revert manually CHANGE COLUMN allergies alter operation to the previous definition.',
+            $down3
+        );
+        $this->assertContainsAll($down3, [
+            "\$table->dropColumn('preexisting_conditions');",
+        ]);
+
+        // 4. ALTER TABLE `patients` ADD FULLTEXT INDEX `patients_fulltext` (`first_name`, `last_name`, `email`, `phone`, `notes`);
+        [$up4, $down4] = $this->buildAlterDefinitions(
+            'ALTER TABLE `patients` ADD FULLTEXT INDEX `patients_fulltext` (`first_name`, `last_name`, `email`, `phone`, `notes`)'
+        );
+        $this->assertContainsAll($up4, [
+            "if (Schema::getConnection()->getDriverName() !== 'sqlite') {",
+            "\$table->fullText(['first_name', 'last_name', 'email', 'phone', 'notes'], 'patients_fulltext');",
+        ]);
+        $this->assertContainsAll($down4, [
+            "if (Schema::getConnection()->getDriverName() !== 'sqlite') {",
+            "\$table->dropFullText('patients_fulltext');",
+        ]);
+    }
+
     private function buildAlterDefinitions(string $sql): array
     {
         $writer = new MigrationDefinitionWriter;
