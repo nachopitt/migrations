@@ -49,6 +49,8 @@ class MigrationDefinitionWriter
 
     protected const ALTER_OPERATION_RENAME_INDEX = 11;
 
+    protected const ALTER_OPERATION_MODIFY_COLUMN = 12;
+
     public function __construct()
     {
         $this->upDefinition = new MigrationDefinition;
@@ -83,10 +85,17 @@ class MigrationDefinitionWriter
             'TEXT',
             'MEDIUMTEXT',
             'LONGTEXT',
+            'JSON',
         ];
 
         foreach ($this->allowedDataTypes as $allowedDataType) {
             switch ($allowedDataType) {
+                case 'JSON':
+                    $this->columnBlueprints[$allowedDataType] = function ($fieldName, $parameters = []) {
+                        return sprintf("\$table->json('%s')", $fieldName);
+                    };
+
+                    break;
                 case 'INT':
                 case 'INTEGER':
                     $this->columnBlueprints[$allowedDataType] = function ($fieldName, $parameters = []) {
@@ -252,6 +261,11 @@ class MigrationDefinitionWriter
 
                         return sprintf("->default($format)", $optionValue);
                     }
+                },
+                'COMMENT' => function ($optionValue) {
+                    $escaped = str_replace("'", "\\'", $optionValue);
+
+                    return sprintf("->comment('%s')", $escaped);
                 },
                 'AFTER' => function ($optionValue) {
                     return sprintf("->after('%s')", $optionValue);
@@ -449,6 +463,7 @@ class MigrationDefinitionWriter
                 case MigrationDefinitionWriter::ALTER_OPERATION_ADD_UNIQUE:
                 case MigrationDefinitionWriter::ALTER_OPERATION_ADD_FULLTEXT:
                 case MigrationDefinitionWriter::ALTER_OPERATION_ADD_CONSTRAINT:
+                case MigrationDefinitionWriter::ALTER_OPERATION_MODIFY_COLUMN:
                     $this->upDefinition = $upAdds;
                     $this->downDefinition = $downDrops;
 
@@ -463,6 +478,7 @@ class MigrationDefinitionWriter
             switch ($alterOperationType) {
                 case MigrationDefinitionWriter::ALTER_OPERATION_ADD_COLUMN:
                 case MigrationDefinitionWriter::ALTER_OPERATION_CHANGE_COLUMN:
+                case MigrationDefinitionWriter::ALTER_OPERATION_MODIFY_COLUMN:
                     foreach ($tokens as $tokenKey => $token) {
                         if (in_array(Str::upper($token), $this->allowedDataTypes)) {
                             $parameters = $this->getParameters($tokens);
@@ -477,6 +493,7 @@ class MigrationDefinitionWriter
                                 case 'COLLATE':
                                 case 'DEFAULT':
                                 case 'AFTER':
+                                case 'COMMENT':
                                     $optionValue = $tokens[$tokenKey + 1];
 
                                     break;
@@ -492,7 +509,8 @@ class MigrationDefinitionWriter
                         }
                     }
 
-                    if ($alterOperationType === MigrationDefinitionWriter::ALTER_OPERATION_CHANGE_COLUMN) {
+                    if ($alterOperationType === MigrationDefinitionWriter::ALTER_OPERATION_CHANGE_COLUMN ||
+                        $alterOperationType === MigrationDefinitionWriter::ALTER_OPERATION_MODIFY_COLUMN) {
                         $this->upDefinition->append($this->changeBlueprint());
                     }
 
@@ -505,6 +523,8 @@ class MigrationDefinitionWriter
                             $this->upDefinition->append(';', false, false);
                         }
 
+                        $this->downDefinition->append('// Revert manually CHANGE COLUMN '.$alterOperation->field->column.' alter operation to the previous definition.');
+                    } elseif ($alterOperationType === MigrationDefinitionWriter::ALTER_OPERATION_MODIFY_COLUMN) {
                         $this->downDefinition->append('// Revert manually CHANGE COLUMN '.$alterOperation->field->column.' alter operation to the previous definition.');
                     } else {
                         $this->downDefinition->append($this->dropBlueprint('column', $alterOperation->field->column));
@@ -815,6 +835,10 @@ class MigrationDefinitionWriter
                 return MigrationDefinitionWriter::ALTER_OPERATION_CHANGE_COLUMN;
             } elseif (! array_diff($options, ['CHANGE', 'COLUMN'])) {
                 return MigrationDefinitionWriter::ALTER_OPERATION_CHANGE_COLUMN;
+            } elseif (! array_diff($options, ['MODIFY'])) {
+                return MigrationDefinitionWriter::ALTER_OPERATION_MODIFY_COLUMN;
+            } elseif (! array_diff($options, ['MODIFY', 'COLUMN'])) {
+                return MigrationDefinitionWriter::ALTER_OPERATION_MODIFY_COLUMN;
             } elseif (! array_diff($options, ['ADD', 'INDEX'])) {
                 return MigrationDefinitionWriter::ALTER_OPERATION_ADD_INDEX;
             } elseif (! array_diff($options, ['ADD', 'KEY'])) {
