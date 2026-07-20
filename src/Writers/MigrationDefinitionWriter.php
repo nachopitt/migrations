@@ -132,7 +132,17 @@ class MigrationDefinitionWriter
                 case 'NUMERIC':
                 case 'DECIMAL':
                     $this->columnBlueprints[$allowedDataType] = function ($fieldName, $parameters = []) {
-                        return sprintf("\$table->decimal('%s')", $fieldName);
+                        $parameters = array_values($parameters);
+
+                        if (empty($parameters)) {
+                            return sprintf("\$table->decimal('%s')", $fieldName);
+                        }
+
+                        if (count($parameters) === 1) {
+                            return sprintf("\$table->decimal('%s', %u)", $fieldName, $parameters[0]);
+                        }
+
+                        return sprintf("\$table->decimal('%s', %u, %u)", $fieldName, $parameters[0], $parameters[1]);
                     };
 
                     break;
