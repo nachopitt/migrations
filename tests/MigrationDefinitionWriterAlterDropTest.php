@@ -204,7 +204,7 @@ class MigrationDefinitionWriterAlterDropTest extends TestCase
         );
         $this->assertContainsAll($up1, [
             "Schema::table('appointment_procedures', function (Blueprint \$table) {",
-            "\$table->decimal('price_charged')",
+            "\$table->decimal('price_charged', 10, 2)",
             '->change();',
         ]);
         $this->assertStringContainsString(
