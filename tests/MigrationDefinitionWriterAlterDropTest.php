@@ -280,6 +280,21 @@ class MigrationDefinitionWriterAlterDropTest extends TestCase
         ]);
     }
 
+    public function test_generates_add_column_alter_statement_with_default_quote()
+    {
+        [$up, $down] = $this->buildAlterDefinitions(
+            "ALTER TABLE `teams` ADD COLUMN `timezone` VARCHAR(255) NULL DEFAULT 'UTC' AFTER `is_personal`"
+        );
+
+        $this->assertContainsAll($up, [
+            "Schema::table('teams', function (Blueprint \$table) {",
+            "\$table->string('timezone', 255)",
+            "->default('UTC')",
+            "->after('is_personal')",
+            '->nullable();',
+        ]);
+    }
+
     private function buildAlterDefinitions(string $sql): array
     {
         $writer = new MigrationDefinitionWriter;

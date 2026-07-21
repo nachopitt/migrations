@@ -261,16 +261,18 @@ class MigrationDefinitionWriter
                     return sprintf("->collation('%s')", $optionValue);
                 },
                 'DEFAULT' => function ($optionValue) {
-                    if ($optionValue === 'NULL') {
+                    if ($optionValue === 'NULL' || $optionValue === "'NULL'" || $optionValue === '"NULL"') {
                         return '->default(NULL)';
-                    } else {
-                        $format = '%s';
-                        if (is_numeric($optionValue)) {
-                            $format = '"'.$format.'"';
-                        }
-
-                        return sprintf("->default($format)", $optionValue);
                     }
+
+                    $trimmedValue = trim($optionValue, "'\"");
+                    if (is_numeric($trimmedValue)) {
+                        return sprintf('->default(%s)', $trimmedValue);
+                    }
+
+                    $escaped = str_replace("'", "\\'", $trimmedValue);
+
+                    return sprintf("->default('%s')", $escaped);
                 },
                 'COMMENT' => function ($optionValue) {
                     $escaped = str_replace("'", "\\'", $optionValue);
