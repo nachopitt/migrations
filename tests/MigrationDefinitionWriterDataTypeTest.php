@@ -54,6 +54,7 @@ class MigrationDefinitionWriterDataTypeTest extends TestCase
             'mediumtext' => ['`sample` MEDIUMTEXT NOT NULL', ["\$table->mediumText('sample');"]],
             'longtext' => ['`sample` LONGTEXT NOT NULL', ["\$table->longText('sample');"]],
             'json' => ['`sample` JSON NOT NULL', ["\$table->json('sample');"]],
+            'varchar default quote' => ["`timezone` VARCHAR(255) NULL DEFAULT 'UTC'", ["\$table->string('timezone', 255)", "->default('UTC')", '->nullable();']],
         ];
     }
 
