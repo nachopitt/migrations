@@ -267,10 +267,11 @@ class MigrationDefinitionWriter
 
                     $trimmedValue = trim($optionValue, "'\"");
                     if (is_numeric($trimmedValue)) {
-                        return sprintf("->default(%s)", $trimmedValue);
+                        return sprintf('->default(%s)', $trimmedValue);
                     }
 
                     $escaped = str_replace("'", "\\'", $trimmedValue);
+
                     return sprintf("->default('%s')", $escaped);
                 },
                 'COMMENT' => function ($optionValue) {
